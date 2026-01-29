@@ -1,4 +1,80 @@
-/* ===== Base Styles ===== */
+/* ===== Acessibilidade ===== */
+.access-menu {
+  position: fixed;
+  top: 52px;
+  right: 12px;
+  z-index: 100;
+  display: flex;
+  gap: 8px;
+}
+
+.access-menu-toggle,
+.access-btn {
+  padding: 6px 10px;
+  background: #111827;
+  color: #e5e7eb;
+  border: 1px solid #1f2937;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.access-menu-toggle:hover,
+.access-menu-toggle:focus-visible,
+.access-btn:hover,
+.access-btn:focus-visible {
+  outline: none;
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.access-panel {
+  position: fixed;
+  top: 52px;
+  right: 130px;
+  background: #0b1324;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.access-panel[hidden] {
+  display: none;
+}
+
+.access-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.access-btn {
+  padding: 6px 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.access-status-row {
+  display: flex;
+  gap: 6px;
+  padding-top: 3px;
+  border-top: 1px solid #1f2937;
+}
+
+.access-status {
+  font-size: 9px;
+  color: #9ca3af;
+  min-height: 12px;
+}
+
+/* ===== Estilos Base ===== */
 * {
   box-sizing: border-box;
 }
@@ -14,6 +90,7 @@ html, body {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  overflow-x: hidden;
 }
 
 #app {
@@ -22,9 +99,10 @@ html, body {
   height: 100vh;
   width: 100%;
   overflow: hidden;
+  overflow-x: hidden;
 }
 
-/* ===== Header ===== */
+/* ===== Cabeçalho ===== */
 .app-header {
   padding: 6px 12px;
   border-bottom: 1px solid #1f2937;
@@ -84,7 +162,7 @@ html, body {
   background: #dc2626;
 }
 
-/* ===== Footer ===== */
+/* ===== Rodapé ===== */
 .app-footer {
   padding: 8px 12px;
   border-top: 1px solid #1f2937;
@@ -145,7 +223,7 @@ html, body {
   color: #374151;
 }
 
-/* ===== Main Content ===== */
+/* ===== Conteúdo Principal ===== */
 #wizard {
   flex: 1;
   padding: 12px;
@@ -162,7 +240,7 @@ html, body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .step-container h2 {
@@ -211,7 +289,7 @@ html, body {
   margin: 0 0 20px;
 }
 
-/* ===== Plans Container (Cards) ===== */
+/* ===== Container de Planos (Cards) ===== */
 .plans-container {
   width: 100%;
   height: 100%;
@@ -241,7 +319,7 @@ html, body {
   font-size: 11px;
 }
 
-/* Filter Buttons */
+/* Botões de Filtro */
 .filter-buttons {
   display: flex;
   gap: 8px;
@@ -282,7 +360,7 @@ html, body {
   opacity: 0.7;
 }
 
-/* Plans Grid */
+/* Grade de Planos */
 .plans-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -327,8 +405,13 @@ html, body {
 }
 
 .plan-card.pro-card {
-  border-color: #22c55e;
   background: linear-gradient(135deg, #1f2937 0%, rgba(34, 197, 94, 0.08) 100%);
+}
+
+.plan-card.pro-card:hover {
+  border-color: #22c55e;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.15);
+  transform: translateY(-2px);
 }
 
 .plan-badge {
@@ -362,7 +445,7 @@ html, body {
   color: #e5e7eb;
 }
 
-/* Plan Pricing */
+/* Preço do Plano */
 .plan-pricing {
   display: flex;
   flex-wrap: wrap;
@@ -401,7 +484,7 @@ html, body {
   order: 3;
 }
 
-/* Plan Button */
+/* Botão do Plano */
 .plan-card .btn-free,
 .plan-card .btn-pro {
   width: 100%;
@@ -436,7 +519,7 @@ html, body {
   transform: translateY(-1px);
 }
 
-/* Plan Features List */
+/* Lista de Funcionalidades */
 .plan-features {
   display: flex;
   flex-direction: column;
@@ -508,7 +591,7 @@ html, body {
   word-break: break-word;
 }
 
-/* Back Button */
+/* Botão Voltar */
 .btn-back {
   background: transparent;
   color: #9ca3af;
@@ -528,7 +611,7 @@ html, body {
   border-color: #22c55e;
 }
 
-/* ===== Buttons ===== */
+/* ===== Botões ===== */
 .btn-primary,
 .btn-secondary,
 .btn-success,
@@ -618,7 +701,7 @@ html, body {
   background: #4b5563;
 }
 
-/* ===== Home Page ===== */
+/* ===== Página Inicial ===== */
 .home-container {
   max-width: 500px;
   text-align: center;
@@ -709,12 +792,14 @@ html, body {
   color: #d1d5db;
 }
 
-/* ===== Device Selection ===== */
+/* ===== Seleção de Dispositivo ===== */
 .device-list {
   display: grid;
   gap: 8px;
   max-height: 100%;
   overflow-y: auto;
+  overflow-x: visible;
+  padding-right: 10px;
 }
 
 .device-card {
@@ -766,14 +851,14 @@ html, body {
   margin-left: 10px;
 }
 
-/* ===== File Types Grid ===== */
+/* ===== Grade de Tipos de Arquivo ===== */
 .file-type-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 8px;
   margin-bottom: 16px;
   max-height: 100%;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .file-type-card {
@@ -809,7 +894,7 @@ html, body {
   color: #9ca3af;
 }
 
-/* ===== Payment Page ===== */
+/* ===== Página de Pagamento ===== */
 .payment-container {
   max-width: 600px;
   margin: 0 auto;
@@ -899,7 +984,7 @@ html, body {
   color: #9ca3af;
 }
 
-/* ===== Progress Bar ===== */
+/* ===== Barra de Progresso ===== */
 .scan-progress,
 .recovery-progress {
   margin-top: 16px;
@@ -940,7 +1025,7 @@ html, body {
   margin: 0;
 }
 
-/* ===== Loading Spinner ===== */
+/* ===== Spinner de Carregamento ===== */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -973,7 +1058,7 @@ html, body {
   color: #9ca3af;
 }
 
-/* ===== Results List ===== */
+/* ===== Lista de Resultados ===== */
 .results-header {
   display: flex;
   justify-content: space-between;
@@ -1053,7 +1138,7 @@ html, body {
   color: #f97316;
 }
 
-/* ===== Success Container ===== */
+/* ===== Container de Sucesso ===== */
 .success-container {
   display: flex;
   flex-direction: column;
@@ -1497,4 +1582,53 @@ html, body {
 
 .policy-content::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
+}
+
+/* ===== Accessibility - High Contrast ===== */
+body.access-contrast {
+  background: #000;
+  color: #f8fafc;
+}
+
+body.access-contrast .app-header,
+body.access-contrast .app-footer {
+  background: #000;
+  border-color: #f8fafc;
+}
+
+body.access-contrast .plan-card,
+body.access-contrast .device-card,
+body.access-contrast .file-type-card,
+body.access-contrast .payment-option,
+body.access-contrast .result-item {
+  background: #0a0a0a;
+  border-color: #f8fafc;
+  color: #f8fafc;
+}
+
+body.access-contrast .btn-primary,
+body.access-contrast .btn-secondary,
+body.access-contrast .btn-back,
+body.access-contrast .btn-logout,
+body.access-contrast .btn-free,
+body.access-contrast .btn-pro {
+  border-color: #f8fafc;
+  color: #0a0a0a;
+  background: #f8fafc;
+}
+
+body.access-contrast .filter-btn.active,
+body.access-contrast .plan-badge-pro {
+  color: #0a0a0a;
+  background: #f8fafc;
+  border-color: #f8fafc;
+}
+
+body.read-hover-enabled .result-item:hover,
+body.read-hover-enabled .payment-option:hover,
+body.read-hover-enabled .plan-card:hover,
+body.read-hover-enabled .device-card:hover,
+body.read-hover-enabled .file-type-card:hover {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
 }

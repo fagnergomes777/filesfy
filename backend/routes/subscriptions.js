@@ -1,18 +1,24 @@
 const express = require('express');
-const SubscriptionController = require('../controllers/SubscriptionController');
+const Subscription = require('../models/Subscription');
 
 const router = express.Router();
 
-// Obter assinatura do usuário
-router.get('/:userId', SubscriptionController.getSubscription);
+router.get('/:userId', async (req, res) => {
+  try {
+    const subscription = await Subscription.findByUserId(req.params.userId);
+    res.json(subscription || { tipo_plano: 'FREE', status: 'ativo' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-// Fazer upgrade para PRO
-router.post('/:userId/upgrade', SubscriptionController.upgradePlan);
-
-// Downgrade para FREE
-router.post('/:userId/downgrade', SubscriptionController.downgradePlan);
-
-// Verificar assinaturas expiradas
-router.post('/check-expired', SubscriptionController.checkExpiredSubscriptions);
+router.post('/:userId/upgrade', async (req, res) => {
+  try {
+    const subscription = await Subscription.updatePlan(req.params.userId, 'PRO');
+    res.json(subscription);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;

@@ -1,42 +1,36 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 require('dotenv').config();
+const pool = require('./config/database');
 
 const authRoutes = require('./routes/auth');
-const subscriptionRoutes = require('./routes/subscriptions');
 const paymentRoutes = require('./routes/payments');
+const subscriptionRoutes = require('./routes/subscriptions');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middlewares
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+app.use(express.json());
 
-app.use(bodyParser.json());
-
-// Rotas
 app.use('/api/auth', authRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'API is running' });
-});
-
-// Tratamento de erro 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Rota não encontrada' });
-});
-
-// Tratamento global de erros
-app.use((err, req, res, next) => {
+app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
+app.use((req, res) => res.status(404).json({ error: 'Rota não encontrada' }));
+app.use((err, req, res) => {
   console.error('Erro:', err);
-  res.status(500).json({ error: 'Erro interno do servidor' });
+  res.status(500).json({ error: 'Erro interno' });
+});
+
+// Testar conexão PostgreSQL antes de iniciar
+pool.query('SELECT NOW()', (err) => {
+  if (err) {
+    console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
+    process.exit(1);
+  }
+  console.log('✅ Conexão PostgreSQL estabelecida');
 });
 
 app.listen(PORT, () => {

@@ -1,4 +1,3 @@
-// API Client para comunicação com o backend
 const API_URL = 'http://localhost:3001/api';
 
 class ApiClient {
@@ -26,11 +25,17 @@ class ApiClient {
     return response.json();
   }
 
-  // Autenticação
   static loginWithGoogle(token, refreshToken) {
     return this.request('/auth/login-google', {
       method: 'POST',
       body: JSON.stringify({ token, refreshToken }),
+    });
+  }
+
+  static testLogin(email, name) {
+    return this.request('/auth/test-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, name }),
     });
   }
 
@@ -46,7 +51,6 @@ class ApiClient {
     });
   }
 
-  // Assinaturas
   static getSubscription(userId) {
     return this.request(`/subscriptions/${userId}`);
   }
@@ -57,7 +61,6 @@ class ApiClient {
     });
   }
 
-  // Pagamentos
   static createPaymentIntent(userId, planType, paymentMethod) {
     return this.request('/payments/intent', {
       method: 'POST',
@@ -69,5 +72,3 @@ class ApiClient {
     return this.request(`/payments/history/${userId}`);
   }
 }
-
-module.exports = ApiClient;

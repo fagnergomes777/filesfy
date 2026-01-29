@@ -3,10 +3,8 @@ const pool = require('../config/database');
 class Subscription {
   static async create(userId, planType = 'FREE') {
     const query = `
-      INSERT INTO subscriptions (user_id, plan_type, is_active)
-      VALUES ($1, $2, TRUE)
-      ON CONFLICT (user_id) DO UPDATE 
-      SET plan_type = EXCLUDED.plan_type, updated_at = CURRENT_TIMESTAMP
+      INSERT INTO assinaturas (usuario_id, tipo_plano, status, iniciado_em)
+      VALUES ($1, $2, 'ativo', CURRENT_TIMESTAMP)
       RETURNING *;
     `;
     const result = await pool.query(query, [userId, planType]);
@@ -14,30 +12,35 @@ class Subscription {
   }
 
   static async findByUserId(userId) {
-    const query = 'SELECT * FROM subscriptions WHERE user_id = $1;';
+    const query = `
+      SELECT * FROM assinaturas
+      WHERE usuario_id = $1 AND status = 'ativo'
+      ORDER BY iniciado_em DESC
+      LIMIT 1;
+    `;
     const result = await pool.query(query, [userId]);
     return result.rows[0];
   }
 
-  static async upgradeToPro(userId, expiresAt) {
+  static async updatePlan(userId, planType) {
     const query = `
-      UPDATE subscriptions 
-      SET plan_type = 'PRO', expires_at = $2, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $1
+      UPDATE assinaturas
+      SET tipo_plano = $1, iniciado_em = CURRENT_TIMESTAMP
+      WHERE usuario_id = $2 AND status = 'ativo'
       RETURNING *;
     `;
-    const result = await pool.query(query, [userId, expiresAt]);
+    const result = await pool.query(query, [planType, userId]);
     return result.rows[0];
   }
 
-  static async downgradeToFree(userId) {
+  static async cancel(subscriptionId) {
     const query = `
-      UPDATE subscriptions 
-      SET plan_type = 'FREE', expires_at = NULL, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $1
+      UPDATE assinaturas
+      SET status = 'cancelado'
+      WHERE id = $1
       RETURNING *;
     `;
-    const result = await pool.query(query, [userId]);
+    const result = await pool.query(query, [subscriptionId]);
     return result.rows[0];
   }
 }

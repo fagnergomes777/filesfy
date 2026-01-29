@@ -1,94 +1,51 @@
--- Criar enum para tipos de plano
-CREATE TYPE plan_type AS ENUM ('FREE', 'PRO');
+-- Dropar tabelas existentes
+DROP TABLE IF EXISTS pagamentos CASCADE;
+DROP TABLE IF EXISTS assinaturas CASCADE;
+DROP TABLE IF EXISTS usuarios CASCADE;
 
--- Tabela de usuários
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  google_id VARCHAR(255) UNIQUE,
+-- Tabela: usuarios
+CREATE TABLE usuarios (
+  id BIGSERIAL PRIMARY KEY,
+  nome VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
-  name VARCHAR(255) NOT NULL,
+  google_id VARCHAR(255) UNIQUE,
   avatar_url TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de assinaturas/planos
-CREATE TABLE subscriptions (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  plan_type plan_type DEFAULT 'FREE',
-  started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  expires_at TIMESTAMP,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id)
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+CREATE INDEX idx_usuarios_google_id ON usuarios(google_id);
+
+-- Tabela: assinaturas
+CREATE TABLE assinaturas (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo_plano VARCHAR(50) NOT NULL DEFAULT 'FREE',
+  status VARCHAR(50) NOT NULL DEFAULT 'ativo',
+  iniciado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expira_em TIMESTAMP,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT chk_tipo_plano CHECK (tipo_plano IN ('FREE', 'PRO')),
+  CONSTRAINT chk_status CHECK (status IN ('ativo', 'cancelado'))
 );
 
--- Tabela de transações/pagamentos
-CREATE TABLE transactions (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  subscription_id INTEGER REFERENCES subscriptions(id),
-  amount DECIMAL(10, 2) NOT NULL,
-  currency VARCHAR(3) DEFAULT 'BRL',
-  payment_method VARCHAR(50) NOT NULL, -- 'pix', 'credit_card', 'debit_card'
-  status VARCHAR(50) DEFAULT 'pending', -- pending, completed, failed, refunded
-  stripe_payment_id VARCHAR(255),
-  mercado_pago_id VARCHAR(255),
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE INDEX idx_assinaturas_usuario_id ON assinaturas(usuario_id);
+CREATE INDEX idx_assinaturas_status ON assinaturas(status);
+
+-- Tabela: pagamentos
+CREATE TABLE pagamentos (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  assinatura_id BIGINT REFERENCES assinaturas(id) ON DELETE SET NULL,
+  stripe_id VARCHAR(255) UNIQUE,
+  valor NUMERIC(10,2) NOT NULL,
+  moeda VARCHAR(3) DEFAULT 'BRL',
+  status VARCHAR(50) NOT NULL DEFAULT 'pendente',
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT chk_status_pagamento CHECK (status IN ('pendente', 'pago', 'falhou'))
 );
 
--- Tabela de planos disponíveis
-CREATE TABLE plans (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL UNIQUE,
-  plan_type plan_type NOT NULL,
-  price DECIMAL(10, 2) NOT NULL,
-  currency VARCHAR(3) DEFAULT 'BRL',
-  billing_cycle VARCHAR(50) DEFAULT 'monthly', -- monthly, yearly
-  features JSONB,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabela de sessões/tokens
-CREATE TABLE sessions (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  token VARCHAR(500) NOT NULL UNIQUE,
-  google_refresh_token VARCHAR(500),
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Índices para performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_google_id ON users(google_id);
-CREATE INDEX idx_subscriptions_user_id ON subscriptions(user_id);
-CREATE INDEX idx_transactions_user_id ON transactions(user_id);
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_token ON sessions(token);
-
--- Inserir planos padrão
-INSERT INTO plans (name, plan_type, price, features, description, billing_cycle)
-VALUES 
-(
-  'Free',
-  'FREE',
-  0.00,
-  '{"max_scans": 3, "max_file_size": "100MB", "ads": true, "support": "community"}'::JSONB,
-  'Plano gratuito com funcionalidades básicas',
-  'monthly'
-),
-(
-  'PRO',
-  'PRO',
-  29.90,
-  '{"max_scans": -1, "max_file_size": "10GB", "ads": false, "support": "priority", "custom_filters": true, "batch_recovery": true}'::JSONB,
-  'Plano profissional com acesso total',
-  'monthly'
-);
+CREATE INDEX idx_pagamentos_usuario_id ON pagamentos(usuario_id);
+CREATE INDEX idx_pagamentos_assinatura_id ON pagamentos(assinatura_id);
+CREATE INDEX idx_pagamentos_stripe_id ON pagamentos(stripe_id);

@@ -1,4 +1,3 @@
-// Gerenciador de estado de autenticação
 class AuthManager {
   constructor() {
     this.currentUser = null;
@@ -9,7 +8,6 @@ class AuthManager {
   async init() {
     if (this.token) {
       try {
-        const ApiClient = require('./api.js');
         const response = await ApiClient.verifyToken();
         this.currentUser = response.user;
         this.dispatchEvent('authChanged', { user: this.currentUser });
@@ -22,7 +20,6 @@ class AuthManager {
 
   async loginWithGoogle(googleToken, refreshToken) {
     try {
-      const ApiClient = require('./api.js');
       const response = await ApiClient.loginWithGoogle(googleToken, refreshToken);
       
       this.token = response.token;
@@ -41,7 +38,6 @@ class AuthManager {
 
   async logout() {
     try {
-      const ApiClient = require('./api.js');
       await ApiClient.logout();
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
@@ -74,4 +70,3 @@ class AuthManager {
 }
 
 const authManager = new AuthManager();
-module.exports = authManager;

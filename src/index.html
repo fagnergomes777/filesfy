@@ -17,9 +17,22 @@
       </div>
     </header>
 
-    <main id="wizard">
-      <!-- As etapas serão injetadas por renderer.js -->
-    </main>
+    <div class="access-menu" role="region" aria-label="Ferramentas de acessibilidade">
+      <button id="access-menu-toggle" class="access-menu-toggle" aria-expanded="false" aria-controls="access-menu-panel" data-readable="Abrir painel de acessibilidade">♿ Acessibilidade</button>
+      <div id="access-menu-panel" class="access-panel" hidden>
+        <div class="access-actions">
+          <button id="btn-zoom-in" class="access-btn" aria-label="Aumentar zoom" title="Aumentar zoom" data-readable="Aumentar zoom">A+</button>
+          <button id="btn-zoom-out" class="access-btn" aria-label="Reduzir zoom" title="Reduzir zoom" data-readable="Reduzir zoom">A-</button>
+          <button id="btn-contrast" class="access-btn" aria-label="Ativar alto contraste" title="Ativar alto contraste" data-readable="Ativar alto contraste">Contraste</button>
+          <button id="btn-hover-read" class="access-btn" aria-label="Ativar leitura ao passar o mouse" title="Ativar leitura ao passar o mouse" data-readable="Ativar leitura ao passar o mouse">Leitura</button>
+        </div>
+        <div class="access-status-row">
+          <span id="access-status" class="access-status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+
+    <main id="wizard"></main>
 
     <footer class="app-footer">
       <div class="footer-content">
@@ -40,30 +53,6 @@
         </div>
       </div>
     </footer>
-  </div>
-
-  <!-- Modal de Autenticação -->
-  <div id="auth-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <button class="modal-close">&times;</button>
-      <div id="login-form"></div>
-    </div>
-  </div>
-
-  <!-- Modal de Planos -->
-  <div id="plans-modal" class="modal-overlay hidden">
-    <div class="modal-content large">
-      <button class="modal-close">&times;</button>
-      <div id="plans-container"></div>
-    </div>
-  </div>
-
-  <!-- Modal de Pagamento -->
-  <div id="payment-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <button class="modal-close">&times;</button>
-      <div id="payment-form"></div>
-    </div>
   </div>
 
   <script src="./api.js"></script>

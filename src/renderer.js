@@ -1,10 +1,8 @@
-// Elementos DOM
 const wizardEl = document.getElementById('wizard');
 const logoutBtn = document.getElementById('logout-btn');
 const userInfoEl = document.getElementById('user-info');
-// Footer element removed - new footer structure in place
+const footerInfoEl = document.querySelector('.footer-content .footer-left') || null;
 
-// Estado da aplicação
 let currentStep = 0;
 let devices = [];
 let selectedDevice = null;
@@ -15,8 +13,19 @@ let currentUser = null;
 let userSubscription = null;
 let selectedPlan = null;
 let currentFilter = null; // 'free' ou 'pro'
+let accessibilityState = {
+  zoom: 1,
+  contrast: false,
+  hoverReading: false
+};
+let hoverReadHandler = null;
+let lastSpokenText = '';
+let lastSpeakTime = 0;
+let accessibilityInitialized = false;
+let accessMenuToggleEl = null;
+let accessMenuPanelEl = null;
+let isAccessPanelOpen = false;
 
-// Planos e features
 const PLANS = {
   free: {
     name: 'Filesfy FREE',
@@ -26,32 +35,32 @@ const PLANS = {
     duration: 'Para sempre',
     button: 'Começar Grátis',
     features: [
-      { name: 'Até 3 varridas por mês', included: true },
-      { name: 'Limite 100MB por varredura', included: true },
-      { name: 'Máximo 5 arquivos', included: true },
+      { name: 'Até 1 varridas por mês', included: true },
+      { name: 'Limite 500MB por varredura', included: true },
+      { name: 'Máximo 3 arquivos', included: true },
       { name: 'Recuperação básica', included: true },
       { name: 'Suporte por email', included: true },
-      { name: 'Histórico 7 dias', included: true },
-      { name: 'Sem anúncios', included: true },
-      { name: 'Armazenamento 500MB', included: true },
+      { name: 'Histórico 4 dias', included: true },
+      { name: 'Com anúncios', included: true },
+      { name: 'Armazenamento 300MB', included: true },
       { name: 'Varreduras ilimitadas', included: false },
       { name: 'Sem limite de arquivos', included: false }
     ]
   },
   pro: {
     name: 'Filesfy PRO',
-    price: 'R$ 9,99',
-    originalPrice: 'R$ 15,99',
-    discount: '37%',
+    price: 'R$ 15,99',
+    originalPrice: 'R$ 19,99',
+    discount: '20%',
     duration: 'primeiro mês',
     button: 'Fazer Upgrade PRO',
     features: [
-      { name: 'Até 3 varridas por mês', included: true },
+      { name: 'Até 5 varridas por mês', included: true },
       { name: 'Limite 100MB por varredura', included: true },
-      { name: 'Máximo 5 arquivos', included: true },
-      { name: 'Recuperação básica', included: true },
+      { name: 'Máximo 7 arquivos', included: true },
+      { name: 'Recuperação avançada', included: true },
       { name: 'Suporte por email', included: true },
-      { name: 'Histórico 7 dias', included: true },
+      { name: 'Histórico 30 dias', included: true },
       { name: 'Sem anúncios', included: true },
       { name: 'Armazenamento 500MB', included: true },
       { name: 'Varreduras ilimitadas', included: true },
@@ -60,7 +69,6 @@ const PLANS = {
   }
 };
 
-// Event listeners
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
     if (typeof authManager !== 'undefined') {
@@ -70,7 +78,6 @@ if (logoutBtn) {
   });
 }
 
-// Detectar mudanças de autenticação
 window.addEventListener('authChanged', (e) => {
   currentUser = e.detail.user;
   updateHeader();
@@ -81,8 +88,8 @@ window.addEventListener('authChanged', (e) => {
   }
 });
 
-// Inicializar app
 document.addEventListener('DOMContentLoaded', () => {
+  initAccessibilityControls();
   if (typeof authManager !== 'undefined' && authManager.isAuthenticated()) {
     currentUser = authManager.getUser();
     selectedPlan = authManager.getPlan();
@@ -97,9 +104,10 @@ function updateHeader() {
   if (currentUser && userInfoEl) {
     userInfoEl.style.display = 'flex';
     if (logoutBtn) logoutBtn.style.display = 'block';
+    const plan = currentUser.plan || currentUser.tipo_de_plano || userSubscription?.plan_type || 'FREE';
     userInfoEl.innerHTML = `
-      <img src="${currentUser.avatar_url || currentUser.avatar}" alt="${currentUser.name}" class="user-avatar">
-      <span>${currentUser.name} (${userSubscription?.plan_type || 'CARREGANDO...'})</span>
+      <img src="${currentUser.avatar_url || currentUser.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(currentUser.name || currentUser.nome)}" alt="${currentUser.name || currentUser.nome}" class="user-avatar">
+      <span>${currentUser.name || currentUser.nome} (${plan})</span>
     `;
   } else {
     if (userInfoEl) userInfoEl.style.display = 'none';
@@ -109,10 +117,11 @@ function updateHeader() {
 
 async function loadUserSubscription() {
   try {
-    if (typeof ApiClient !== 'undefined' && currentUser) {
-      const response = await ApiClient.getSubscription(currentUser.id);
-      userSubscription = response.subscription;
-      selectedPlan = response.subscription.plan_type;
+    if (currentUser) {
+      userSubscription = {
+        plan_type: currentUser.plan || currentUser.tipo_de_plano || 'FREE'
+      };
+      selectedPlan = userSubscription.plan_type.toLowerCase();
       updateHeader();
     }
   } catch (error) {
@@ -228,60 +237,43 @@ function selectFreePlan() {
 }
 
 function selectProPlan() {
-  // Mostrar tela de autenticação para PRO
   currentStep = 0;
   selectedPlan = 'pro';
   
+  const planInfo = PLANS.pro;
+  
   const html = `
-    <div class="auth-container">
-      <div class="auth-card">
-        <div class="auth-header">
-          <h2>Upgrade para PRO</h2>
-          <p>Desbloquie recursos ilimitados</p>
-        </div>
+    <div class="home-container">
+      <div class="welcome-section">
+        <h1>Upgrade para PRO</h1>
+        <p>${planInfo ? planInfo.name + ' - ' + planInfo.price : 'Plano PRO'}</p>
+      </div>
 
-        <div class="auth-methods">
-          <div id="google-signin-container"></div>
+      <div class="plan-summary">
+        <h3>Seu plano inclui:</h3>
+        <div class="summary-grid">
+          ${planInfo && planInfo.features ? planInfo.features.filter(f => f.included).map(f => `
+            <div class="summary-item">
+              <span class="check">✓</span>
+              <span>${f.name}</span>
+            </div>
+          `).join('') : ''}
         </div>
+      </div>
 
-        <div class="auth-benefits">
-          <h3>Plano PRO Inclui:</h3>
-          <ul>
-            <li>✓ Varreduras ilimitadas</li>
-            <li>✓ Recuperação de arquivos sem limite</li>
-            <li>✓ Armazenamento 50GB</li>
-            <li>✓ Suporte prioritário</li>
-            <li>✓ Sem anúncios</li>
-          </ul>
-        </div>
-
-        <button class="btn-back" onclick="showPlansComparison()">
-          ← Voltar aos Planos
+      <div class="action-buttons">
+        <button class="btn-primary" onclick="showPaymentPage()">
+          💳 Continuar para Pagamento
         </button>
       </div>
+
+      <button class="btn-cancel" onclick="showPlansComparison()">
+        ← Voltar aos Planos
+      </button>
     </div>
   `;
   
   wizardEl.innerHTML = html;
-  
-  // Inicializar Google Sign-In se disponível
-  setTimeout(() => {
-    const container = document.getElementById('google-signin-container');
-    if (container && window.google?.accounts?.id) {
-      window.google.accounts.id.initialize({
-        client_id: document.querySelector('meta[name="google-client-id"]')?.content || 'YOUR_GOOGLE_CLIENT_ID',
-        callback: handleGoogleProSignIn,
-      });
-
-      window.google.accounts.id.renderButton(container, {
-        type: 'standard',
-        theme: 'filled_blue',
-        size: 'large',
-        text: 'continue_with',
-        width: '100%'
-      });
-    }
-  }, 100);
 }
 
 async function handleGoogleProSignIn(response) {
@@ -306,28 +298,55 @@ async function handleGoogleProSignIn(response) {
   }
 }
 
+async function handleTestLogin() {
+  try {
+    const testUser = {
+      email: `user_${Date.now()}@filesfy.test`,
+      name: `Usuário Teste ${Math.floor(Math.random() * 1000)}`
+    };
+    
+    const response = await ApiClient.testLogin(testUser.email, testUser.name);
+    
+    if (response.user && response.jwtToken) {
+      localStorage.setItem('auth_token', response.jwtToken);
+      localStorage.setItem('user_data', JSON.stringify(response.user));
+      
+      currentUser = response.user;
+      selectedPlan = 'PRO';
+      updateHeader();
+      loadUserSubscription();
+      showPaymentPage();
+    } else {
+      alert('Erro: Resposta inválida do servidor. Verifique o console.');
+    }
+  } catch (error) {
+    alert('Erro ao fazer login em modo teste:\n\n' + (error.error || error.message || 'Verifique a conexão com o servidor'));
+  }
+}
+
 function showHomePage() {
   currentStep = 0;
   
-  const planInfo = PLANS[selectedPlan];
-  const isProUser = selectedPlan === 'pro' && currentUser;
+  const planKey = (selectedPlan || 'free').toLowerCase();
+  const planInfo = PLANS[planKey];
+  const isProUser = planKey === 'pro' && currentUser;
   
   const html = `
     <div class="home-container">
       <div class="welcome-section">
         <h1>Bem-vindo ao Filesfy</h1>
-        <p>${planInfo.name} - ${planInfo.price}</p>
+        <p>${planInfo ? planInfo.name + ' - ' + planInfo.price : 'Plano não definido'}</p>
       </div>
 
       <div class="plan-summary">
         <h3>Seu plano inclui:</h3>
         <div class="summary-grid">
-          ${planInfo.features.filter(f => f.included).slice(0, 4).map(f => `
+          ${planInfo && planInfo.features ? planInfo.features.filter(f => f.included).map(f => `
             <div class="summary-item">
               <span class="check">✓</span>
               <span>${f.name}</span>
             </div>
-          `).join('')}
+          `).join('') : ''}
         </div>
       </div>
 
@@ -335,69 +354,15 @@ function showHomePage() {
         <button class="btn-primary" onclick="renderSelectDevice()">
           📁 Iniciar Recuperação
         </button>
-        ${selectedPlan === 'free' ? `
-          <button class="btn-secondary" onclick="showPlansComparison()">
-            ⭐ Fazer Upgrade para PRO
-          </button>
-        ` : ''}
       </div>
 
-      <button class="btn-back" onclick="showPlansComparison()">
+      <button class="btn-cancel" onclick="showPlansComparison()">
         ← Voltar aos Planos
       </button>
     </div>
   `;
   
   wizardEl.innerHTML = html;
-}
-
-function initGoogleSignIn() {
-  if (window.google?.accounts?.id) {
-    window.google.accounts.id.initialize({
-      client_id: document.querySelector('meta[name="google-client-id"]')?.content || 'YOUR_GOOGLE_CLIENT_ID',
-      callback: handleGoogleSignIn,
-    });
-
-    window.google.accounts.id.prompt((notification) => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        // Renderizar button manualmente se prompt não aparecer
-        const tempContainer = document.createElement('div');
-        wizardEl.appendChild(tempContainer);
-        window.google.accounts.id.renderButton(tempContainer, {
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with'
-        });
-      }
-    });
-  }
-}
-
-async function handleGoogleSignIn(response) {
-  try {
-    const { credential } = response;
-    if (typeof authManager !== 'undefined') {
-      await authManager.loginWithGoogle(credential, null);
-      currentUser = authManager.getUser();
-      selectedPlan = 'PRO';
-      updateHeader();
-      loadUserSubscription();
-      
-      // Se veio do upgrade, ir para pagamento
-      if (currentStep === 0) {
-        showPaymentPage();
-      }
-    }
-  } catch (error) {
-    console.error('Erro no login:', error);
-    
-    // Se houver mensagem sobre Google não configurado, mostrar instruções
-    if (error.error && error.error.includes('Google OAuth não está configurado')) {
-      alert('⚠️ Google OAuth não está configurado.\n\n1. Leia o arquivo CONFIGURACAO_GOOGLE_OAUTH.md\n2. Configure suas credenciais no arquivo .env\n3. Reinicie a aplicação\n\nEnquanto isso, use o modo TESTE para explorar a interface.');
-    } else {
-      alert('Erro ao fazer login. Verifique o console para mais detalhes.');
-    }
-  }
 }
 
 function showPaymentPage() {
@@ -410,7 +375,7 @@ function showPaymentPage() {
         <p>Clique em uma opção para continuar</p>
         <div class="payment-amount">
           <span>Total:</span>
-          <strong>R$ 29,90</strong>
+          <strong>R$ 15,99</strong>
           <span class="payment-period">/mês</span>
         </div>
       </div>
@@ -441,9 +406,11 @@ function showPaymentPage() {
         </div>
       </div>
       
-      <button class="btn-cancel" id="btn-back-payment">
-        Voltar
-      </button>
+      <div style="display: flex; justify-content: center; margin-top: 20px;">
+        <button class="btn-cancel" id="btn-back-payment">
+          Voltar
+        </button>
+      </div>
     </div>
   `;
   
@@ -465,46 +432,44 @@ async function processPayment(method) {
     <div class="loading-container">
       <div class="spinner"></div>
       <h2>Processando pagamento...</h2>
-      <p>Por favor, aguarde</p>
+      <p>Método: ${method === 'pix' ? 'PIX' : method === 'credit_card' ? 'Cartão de Crédito' : 'Cartão de Débito'}</p>
     </div>
   `;
   
   try {
-    // Simular processamento de pagamento
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Aqui você integra com Stripe/Mercado Pago
     if (typeof ApiClient !== 'undefined' && currentUser) {
-      // Criar intent de pagamento
       const paymentIntent = await ApiClient.createPaymentIntent(
         currentUser.id,
-        2990, // R$ 29,90 em centavos
+        'PRO',
         method
       );
       
-      // Simular sucesso
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Atualizar assinatura
-      await ApiClient.upgradePlan(currentUser.id, 'PRO');
       await loadUserSubscription();
-      
       showPaymentSuccess();
     }
   } catch (error) {
-    console.error('Erro no pagamento:', error);
     wizardEl.innerHTML = `
       <div class="error-container">
         <h2>Erro no Pagamento</h2>
-        <p>${error.message || 'Não foi possível processar o pagamento'}</p>
+        <p>${error.error || error.message || 'Não foi possível processar o pagamento'}</p>
         <button class="btn-primary" id="btn-retry-payment">
           Tentar Novamente
+        </button>
+        <button class="btn-secondary" id="btn-back-home-error">
+          Voltar ao Início
         </button>
       </div>
     `;
     
     document.getElementById('btn-retry-payment').addEventListener('click', () => {
       showPaymentPage();
+    });
+    
+    document.getElementById('btn-back-home-error').addEventListener('click', () => {
+      showHomePage();
     });
   }
 }
@@ -526,7 +491,7 @@ function showPaymentSuccess() {
   `;
   
   document.getElementById('btn-start-recovery-pro').addEventListener('click', () => {
-    selectedPlan = 'PRO';
+    selectedPlan = 'pro';
     renderSelectDevice();
   });
 }
@@ -534,12 +499,24 @@ function showPaymentSuccess() {
 function renderSelectDevice() {
   currentStep = 1;
   
+  // Detectar dispositivos conectados (simulado)
+  const connectedMobile = detectMobileDevice();
+  
   devices = [
-    { id: 'hdd1', name: 'Disco Rígido Principal (C:)', size: '500GB' },
-    { id: 'hdd2', name: 'Disco Rígido Secundário (D:)', size: '1TB' },
-    { id: 'usb1', name: 'Pendrive Kingston', size: '32GB' },
-    { id: 'external', name: 'HD Externo Seagate', size: '2TB' }
+    { id: 'local', name: 'Disco Local', size: '500GB', icon: 'hdd' },
+    { id: 'hd_externo', name: 'HD Externo', size: '1TB', icon: 'hdd' },
+    { id: 'pendrive', name: 'Pendrive', size: '32GB', icon: 'usb' }
   ];
+  
+  // Adicionar mobile se detectado
+  if (connectedMobile) {
+    devices.push({
+      id: 'mobile',
+      name: `${connectedMobile.brand} ${connectedMobile.model}`,
+      size: connectedMobile.storage,
+      icon: 'mobile'
+    });
+  }
   
   let html = `
     <div class="step-container">
@@ -548,11 +525,10 @@ function renderSelectDevice() {
   `;
   
   devices.forEach(device => {
+    const deviceIcon = getDeviceIcon(device.icon);
     html += `
       <div class="device-card" data-device-id="${device.id}">
-        <svg class="device-icon" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
-        </svg>
+        ${deviceIcon}
         <div class="device-info">
           <h3>${device.name}</h3>
           <p>${device.size}</p>
@@ -566,18 +542,41 @@ function renderSelectDevice() {
   
   html += `
       </div>
+      <button class="btn-cancel" id="btn-back-device">
+        ← Voltar
+      </button>
     </div>
   `;
   
   wizardEl.innerHTML = html;
   updateFooter('Selecione um dispositivo', 1, 5);
   
-  document.querySelectorAll('.device-card').forEach(card => {
-    card.addEventListener('click', () => {
-      selectedDevice = card.dataset.deviceId;
-      renderSelectType();
+  // Adicionar listeners aos cards
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.device-card');
+    const btnBack = document.getElementById('btn-back-device');
+    
+    if (cards.length === 0) return;
+    
+    // Listener para botão Voltar
+    if (btnBack) {
+      btnBack.addEventListener('click', () => {
+        showHomePage();
+      });
+    }
+    
+    cards.forEach((card) => {
+      const deviceId = card.dataset.deviceId;
+      
+      card.style.cursor = 'pointer';
+      
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedDevice = deviceId;
+        renderSelectType();
+      });
     });
-  });
+  }, 100);
 }
 
 function renderSelectType() {
@@ -609,18 +608,40 @@ function renderSelectType() {
   
   html += `
       </div>
+      <button class="btn-cancel" id="btn-back-device">
+        ← Voltar para Dispositivos
+      </button>
     </div>
   `;
   
   wizardEl.innerHTML = html;
   updateFooter('Selecione o tipo de arquivo', 2, 5);
   
-  document.querySelectorAll('.file-type-card').forEach(card => {
-    card.addEventListener('click', () => {
-      selectedFileType = card.dataset.type;
-      renderScan();
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.file-type-card');
+    const btnBack = document.getElementById('btn-back-device');
+    
+    // Listener para botão Voltar
+    if (btnBack) {
+      btnBack.addEventListener('click', () => {
+        renderSelectDevice();
+      });
+    }
+    
+    cards.forEach((card, index) => {
+      card.style.cursor = 'pointer';
+      
+      card.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectedFileType = this.dataset.type;
+        renderScan();
+      });
+      
+      card.querySelectorAll('*').forEach(el => {
+        el.style.pointerEvents = 'none';
+      });
     });
-  });
+  }, 50);
 }
 
 function renderScan() {
@@ -667,12 +688,12 @@ function renderResults() {
     { id: 4, name: 'Planilha_2024.xlsx', size: '1.5MB', type: 'document', canRecover: true },
     { id: 5, name: 'Música_Favorita.mp3', size: '8.5MB', type: 'audio', canRecover: true },
     { id: 6, name: 'Apresentação.pptx', size: '15.3MB', type: 'document', canRecover: true },
-    { id: 7, name: 'Código_Projeto.zip', size: '52.1MB', type: 'archive', canRecover: selectedPlan === 'PRO' },
-    { id: 8, name: 'Backup_Database.sql', size: '128.5MB', type: 'document', canRecover: selectedPlan === 'PRO' }
+    { id: 7, name: 'Código_Projeto.zip', size: '52.1MB', type: 'archive', canRecover: selectedPlan === 'pro' },
+    { id: 8, name: 'Backup_Database.sql', size: '128.5MB', type: 'document', canRecover: selectedPlan === 'pro' }
   ];
   
   // Aplicar limite do plano FREE
-  if (selectedPlan === 'FREE') {
+  if (selectedPlan === 'free') {
     scanResults = scanResults.slice(0, 5);
   }
   
@@ -708,6 +729,9 @@ function renderResults() {
       <button class="btn-primary" id="btn-recover">
         Recuperar Arquivos Selecionados
       </button>
+      <button class="btn-cancel" id="btn-back-type">
+        ← Voltar para Tipos de Arquivo
+      </button>
     </div>
   `;
   
@@ -715,8 +739,16 @@ function renderResults() {
   updateFooter('Selecione os arquivos', 4, 5);
   
   const selectAllBtn = document.getElementById('btn-select-all');
+  const btnBack = document.getElementById('btn-back-type');
   const checkboxes = document.querySelectorAll('.file-checkbox:not([disabled])');
   const resultsCount = document.querySelector('.results-count');
+  
+  // Listener para botão Voltar
+  if (btnBack) {
+    btnBack.addEventListener('click', () => {
+      renderSelectType();
+    });
+  }
   
   selectAllBtn.addEventListener('click', () => {
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
@@ -753,6 +785,40 @@ function getFileIcon(type) {
     archive: '📦'
   };
   return icons[type] || '📁';
+}
+
+function getDeviceIcon(type) {
+  const icons = {
+    hdd: `<svg class="device-icon" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
+    </svg>`,
+    usb: `<svg class="device-icon" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.07c.7-.37 1.2-1.08 1.2-1.93 0-1.21-.99-2.2-2.2-2.2-1.21 0-2.2.99-2.2 2.2 0 .85.5 1.56 1.2 1.93V13c0 1.11.89 2 2 2h3v3.05c-.71.37-1.2 1.1-1.2 1.95 0 1.22.99 2.2 2.2 2.2 1.21 0 2.2-.98 2.2-2.2 0-.85-.49-1.58-1.2-1.95V15h3c1.11 0 2-.89 2-2v-2h1V7h-4z"/>
+    </svg>`,
+    mobile: `<svg class="device-icon" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+    </svg>`
+  };
+  return icons[type] || icons.hdd;
+}
+
+function detectMobileDevice() {
+  // Simulação de detecção de dispositivo mobile
+  // Em produção, isso seria feito com APIs do sistema operacional
+  const random = Math.random();
+  
+  // 50% de chance de ter um mobile conectado (para demo)
+  if (random > 0.5) {
+    const devices = [
+      { brand: 'Samsung', model: 'Galaxy S23', storage: '128GB' },
+      { brand: 'iPhone', model: '15 Pro', storage: '256GB' },
+      { brand: 'Xiaomi', model: 'Redmi Note 12', storage: '64GB' },
+      { brand: 'Motorola', model: 'Edge 40', storage: '128GB' }
+    ];
+    return devices[Math.floor(Math.random() * devices.length)];
+  }
+  
+  return null;
 }
 
 function recoverFiles() {
@@ -843,152 +909,196 @@ function showModal(title, content) {
   document.body.insertAdjacentHTML('beforeend', modal);
 }
 
+const POLICIES = {
+  privacy: {
+    title: 'Política de Privacidade',
+    content: `<h3>1 — POLÍTICA DE PRIVACIDADE</h3><h4>1.1 — Introdução</h4><p>Esta Política de Privacidade estabelece os princípios e as diretrizes de tratamento de dados pessoais coletados pela Filesfy, em conformidade com a Lei Geral de Proteção de Dados – LGPD (Lei nº 13.709/2018).</p><h4>1.2 — Dados Coletados</h4><p><strong>a. Identificação:</strong> Nome, CPF, Data de nascimento, Identificadores digitais</p><p><strong>b. Contato:</strong> E-mail, Telefone, Endereço</p><p><strong>c. Técnicos:</strong> IP, Logs, Dados de uso</p><h4>1.3 — Finalidades</h4><ul><li>Fornecer e melhorar o serviço</li><li>Cumprir obrigações legais</li><li>Comunicação com usuário</li><li>Suporte técnico</li></ul>`
+  },
+  product: {
+    title: 'Política de Produtos',
+    content: `<h3>2 — POLÍTICA DE PRODUTO</h3><h4>2.1 — Escopo</h4><p>Esta política define regras de uso, responsabilidades e garantias do produto.</p><h4>2.2 — Uso Adequado</h4><p>O usuário concorda em utilizar o produto para fins lícitos e legais, respeitando normas de privacidade.</p><h4>2.3 — Limitações Técnicas</h4><p>Não garantimos recuperação integral em danos físicos severos ou mídias corrompidas.</p>`
+  },
+  license: {
+    title: 'Contrato de Licença',
+    content: `<h3>3 — CONTRATO DE LICENÇA DE USO</h3><h4>CLÁUSULA 1 — OBJETO</h4><p>Concessão de licença de uso não exclusiva e não transferível do software Filesfy.</p><h4>CLÁUSULA 2 — LICENÇA</h4><p>Pessoal, intransferível e válida pelo prazo contratado. Proibido: alugar, sublicenciar, descompilar.</p><h4>CLÁUSULA 3 — PREÇO E PAGAMENTO</h4><p>O LICENCIADO pagará conforme as condições acordadas.</p><h4>CLÁUSULA 8 — LEI APLICÁVEL</h4><p>Regido pela legislação brasileira.</p>`
+  },
+  about: {
+    title: 'Sobre Filesfy',
+    content: `<h3>SOBRE O FILESFY</h3><p><strong>Versão:</strong> 1.0.0</p><p><strong>Descrição:</strong> Aplicação de desktop em Electron para recuperação segura de arquivos deletados.</p><p><strong>Funcionalidades:</strong></p><ul><li>Recuperação de múltiplos tipos</li><li>Suporte a múltiplos dispositivos</li><li>Planos FREE e PRO</li><li>Autenticação Google OAuth</li><li>Sistema de pagamento Stripe</li></ul><p><strong>© 2026 Filesfy Inc.</strong></p>`
+  }
+};
+
 function showPrivacyPolicy(e) {
   e.preventDefault();
-  const content = `
-    <h3>1 — POLÍTICA DE PRIVACIDADE</h3>
-    
-    <h4>1.1 — Introdução</h4>
-    <p>Esta Política de Privacidade estabelece os princípios e as diretrizes de tratamento de dados pessoais coletados, utilizados e armazenados pela Filesfy, em conformidade com a Lei Geral de Proteção de Dados – LGPD (Lei nº 13.709/2018).</p>
-    
-    <h4>1.2 — Dados Pessoais Coletados</h4>
-    <p><strong>a. Dados de Identificação:</strong> Nome completo, CPF, Data de nascimento, Identificadores digitais (ex.: IDs do dispositivo)</p>
-    <p><strong>b. Dados de Contato:</strong> Endereço de e-mail, Telefone, Endereço físico</p>
-    <p><strong>c. Dados Técnicos:</strong> Endereço IP, Logs de sistema, Dados de uso e desempenho da aplicação</p>
-    
-    <h4>1.3 — Finalidades do Tratamento</h4>
-    <ul>
-      <li>Fornecer, manter, operar e melhorar o produto/serviço</li>
-      <li>Cumprir obrigações legais ou regulatórias</li>
-      <li>Comunicação com o usuário</li>
-      <li>Suporte técnico e atendimento</li>
-      <li>Análises estatísticas e melhoria contínua</li>
-    </ul>
-    
-    <h4>1.4 — Bases Legais para Tratamento</h4>
-    <p>O tratamento de dados é realizado com base nas bases legais da LGPD, tais como Consentimento, Execução de contrato, Cumprimento de obrigação legal e Legítimo interesse.</p>
-    
-    <h4>1.5 — Compartilhamento de Dados</h4>
-    <p>Dados podem ser compartilhados com prestadores de serviços terceirizados, autoridades públicas quando exigido por lei, e parceiros comerciais com base legal apropriada.</p>
-    
-    <h4>1.6 — Armazenamento e Segurança</h4>
-    <p>Os dados serão armazenados em ambiente seguro com criptografia em trânsito e em repouso, controle de acesso e logs de auditoria.</p>
-    
-    <h4>1.7 — Direitos dos Titulares de Dados</h4>
-    <p>O usuário pode acessar, corrigir, revogar consentimento e solicitar anonimização ou eliminação de seus dados pessoais a qualquer tempo.</p>
-  `;
-  showModal('Política de Privacidade', content);
+  showModal(POLICIES.privacy.title, POLICIES.privacy.content);
 }
 
 function showProductPolicy(e) {
   e.preventDefault();
-  const content = `
-    <h3>2 — POLÍTICA DE PRODUTO</h3>
-    
-    <h4>2.1 — Escopo</h4>
-    <p>Esta política define regras de uso, responsabilidades, limites e garantias do produto de recuperação de dados fornecido pela Filesfy.</p>
-    
-    <h4>2.2 — Uso Adequado</h4>
-    <p>O usuário concorda em utilizar o produto exclusivamente para recuperação de dados legítimos, fins lícitos e dentro da sua esfera de direitos, respeitando normas de privacidade e propriedade.</p>
-    
-    <h4>2.3 — Limitações Técnicas</h4>
-    <p>O produto não garante:</p>
-    <ul>
-      <li>Recuperação integral após danos físicos severos</li>
-      <li>Sucesso em mídias corrompidas além de capacidades técnicas</li>
-      <li>Compatibilidade com todos os tipos de sistemas de arquivo</li>
-    </ul>
-    
-    <h4>2.4 — Atualizações e Manutenção</h4>
-    <p>Atualizações podem ser automáticas ou manuais. Os termos de atualização são regidos pelo Contrato de Licença de Uso.</p>
-    
-    <h4>2.5 — Suporte Técnico</h4>
-    <p>O suporte será prestado conforme o plano contratado, com prazo de resposta definido e canais oficiais documentados.</p>
-    
-    <h4>2.6 — Responsabilidades</h4>
-    <p><strong>Do fornecedor:</strong> Entregar o produto conforme a documentação e resguardar a segurança durante o uso.</p>
-    <p><strong>Do usuário:</strong> Seguir instruções e boas práticas, não utilizar para atividades ilegais e resguardar acesso indevido.</p>
-  `;
-  showModal('Política de Produtos', content);
+  showModal(POLICIES.product.title, POLICIES.product.content);
 }
 
 function showLicenseAgreement(e) {
   e.preventDefault();
-  const content = `
-    <h3>3 — CONTRATO DE LICENÇA DE USO</h3>
-    
-    <h4>CLÁUSULA 1 — OBJETO</h4>
-    <p>O presente contrato tem por objeto a concessão de licença de uso, não exclusiva e não transferível, do software de recuperação de dados denominado Filesfy.</p>
-    
-    <h4>CLÁUSULA 2 — LICENÇA</h4>
-    <p>A licença é pessoal, intransferível e válida pelo prazo contratado. O LICENCIADO não poderá:</p>
-    <ul>
-      <li>Alugar, sublicenciar, emprestar ou distribuir o software</li>
-      <li>Descompilar ou fazer engenharia reversa</li>
-      <li>Utilizar o software em desconformidade com a legislação vigente</li>
-    </ul>
-    
-    <h4>CLÁUSULA 3 — PREÇO E PAGAMENTO</h4>
-    <p>O LICENCIADO pagará à LICENCIANTE o valor contratado, conforme as condições de pagamento acordadas.</p>
-    
-    <h4>CLÁUSULA 4 — PRAZO E RESCISÃO</h4>
-    <p>O contrato tem início na data de ativação. Pode ser rescindido por inadimplemento, pedido do LICENCIADO ou violação de termos de uso.</p>
-    
-    <h4>CLÁUSULA 5 — PROTEÇÃO DE DADOS (LGPD)</h4>
-    <p>As partes concordam em tratar os dados pessoais conforme a LGPD. O LICENCIANTE implementará medidas de segurança técnicas e administrativas.</p>
-    
-    <h4>CLÁUSULA 6 — SUPORTE E ATUALIZAÇÕES</h4>
-    <p>O LICENCIANTE fornecerá suporte conforme o plano selecionado e disponibilizará atualizações conforme política de versão.</p>
-    
-    <h4>CLÁUSULA 7 — GARANTIAS E LIMITAÇÕES</h4>
-    <p>O software é fornecido "no estado em que se encontra". O LICENCIANTE não será responsável por perdas indiretas, danos consequenciais ou uso indevido.</p>
-    
-    <h4>CLÁUSULA 8 — LEI APLICÁVEL</h4>
-    <p>Este contrato é regido pela legislação brasileira.</p>
-  `;
-  showModal('Contrato de Licença de Uso', content);
+  showModal(POLICIES.license.title, POLICIES.license.content);
 }
 
 function showCookies(e) {
   e.preventDefault();
-  const content = `
-    <h3>PREFERÊNCIAS DE COOKIES</h3>
-    <p>Cookies são pequenos arquivos de dados armazenados no seu dispositivo para melhorar sua experiência.</p>
-    <p><strong>Tipos de Cookies utilizados:</strong></p>
-    <ul>
-      <li><strong>Essenciais:</strong> Necessários para o funcionamento da aplicação</li>
-      <li><strong>Analíticos:</strong> Para medir desempenho e uso</li>
-      <li><strong>Funcionais:</strong> Para lembrar suas preferências</li>
-    </ul>
-    <p>Você pode gerenciar suas preferências de cookies através das configurações do navegador.</p>
-  `;
+  const content = `<h3>PREFERÊNCIAS DE COOKIES</h3><p>Cookies são pequenos arquivos de dados no seu dispositivo para melhorar sua experiência.</p><h4>Tipos Utilizados:</h4><ul><li><strong>Essenciais:</strong> Funcionamento da aplicação</li><li><strong>Analíticos:</strong> Medição de desempenho</li><li><strong>Funcionais:</strong> Lembrar preferências</li></ul><p>Gerencie suas preferências nas configurações do navegador.</p>`;
   showModal('Preferências de Cookies', content);
 }
 
 function showAbout(e) {
   e.preventDefault();
-  const content = `
-    <h3>SOBRE O FILESFY</h3>
-    <p><strong>Filesfy - Recuperação de Dados</strong></p>
-    <p><strong>Versão:</strong> 1.0.0</p>
-    <p><strong>Descrição:</strong> Uma aplicação de desktop desenvolvida em Electron para recuperação segura e confiável de arquivos deletados.</p>
-    <p><strong>Funcionalidades:</strong></p>
-    <ul>
-      <li>Recuperação de arquivos de diferentes tipos</li>
-      <li>Suporte a múltiplos dispositivos de armazenamento</li>
-      <li>Planos FREE e PRO com diferentes capacidades</li>
-      <li>Autenticação segura com Google OAuth</li>
-      <li>Sistema de pagamento integrado</li>
-    </ul>
-    <p><strong>© 2026 Filesfy Inc.</strong></p>
-    <p>Todos os direitos reservados.</p>
-  `;
-  showModal('Sobre o Filesfy', content);
+  showModal(POLICIES.about.title, POLICIES.about.content);
 }
 
-// Inicializar quando o DOM estiver pronto
+function setAccessStatus(message) {
+  const statusEl = document.getElementById('access-status');
+  if (statusEl) {
+    statusEl.textContent = message || '';
+  }
+}
+
+function setAccessPanelVisibility(open) {
+  isAccessPanelOpen = open;
+  if (accessMenuPanelEl) {
+    accessMenuPanelEl.hidden = !open;
+  }
+  if (accessMenuToggleEl) {
+    accessMenuToggleEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  if (open) {
+    document.addEventListener('click', handleAccessMenuOutside, true);
+    document.addEventListener('keydown', handleAccessMenuKeydown, true);
+  } else {
+    document.removeEventListener('click', handleAccessMenuOutside, true);
+    document.removeEventListener('keydown', handleAccessMenuKeydown, true);
+  }
+}
+
+function toggleAccessPanel() {
+  setAccessPanelVisibility(!isAccessPanelOpen);
+}
+
+function handleAccessMenuOutside(event) {
+  if (!accessMenuPanelEl || !accessMenuToggleEl) return;
+  if (accessMenuPanelEl.contains(event.target) || accessMenuToggleEl.contains(event.target)) return;
+  setAccessPanelVisibility(false);
+}
+
+function handleAccessMenuKeydown(event) {
+  if (event.key === 'Escape') {
+    setAccessPanelVisibility(false);
+    accessMenuToggleEl?.focus();
+  }
+}
+
+function adjustZoom(delta) {
+  accessibilityState.zoom = Math.min(1.25, Math.max(0.9, accessibilityState.zoom + delta));
+  document.body.style.zoom = accessibilityState.zoom;
+  setAccessStatus(`Zoom ${Math.round(accessibilityState.zoom * 100)}%`);
+}
+
+function toggleContrastMode() {
+  accessibilityState.contrast = !accessibilityState.contrast;
+  document.body.classList.toggle('access-contrast', accessibilityState.contrast);
+  setAccessStatus(accessibilityState.contrast ? 'Alto contraste ativo' : 'Alto contraste desativado');
+}
+
+function handleHoverSpeak(event) {
+  if (!accessibilityState.hoverReading) return;
+  const target = event.target.closest('[data-readable], button, .plan-card, .device-card, .file-type-card, .payment-option, .result-item, .filter-btn, .btn-primary, .btn-secondary');
+  if (!target) return;
+
+  const text = (target.getAttribute('data-readable') || target.getAttribute('aria-label') || target.textContent || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const now = Date.now();
+
+  if (!text || (text === lastSpokenText && now - lastSpeakTime < 1200)) return;
+
+  lastSpokenText = text;
+  lastSpeakTime = now;
+
+  try {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text.slice(0, 180));
+      utterance.lang = 'pt-BR';
+      window.speechSynthesis.speak(utterance);
+    }
+  } catch (err) {
+    console.error('Leitura por voz falhou:', err);
+  }
+}
+
+function toggleHoverReading() {
+  accessibilityState.hoverReading = !accessibilityState.hoverReading;
+  document.body.classList.toggle('read-hover-enabled', accessibilityState.hoverReading);
+
+  if (accessibilityState.hoverReading) {
+    if (!hoverReadHandler) {
+      hoverReadHandler = handleHoverSpeak;
+      document.addEventListener('mouseover', hoverReadHandler);
+    }
+    setAccessStatus('Leitura por voz ao passar o mouse ativada');
+  } else {
+    if (hoverReadHandler) {
+      document.removeEventListener('mouseover', hoverReadHandler);
+      hoverReadHandler = null;
+    }
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setAccessStatus('Leitura por voz desativada');
+  }
+}
+
+function initAccessibilityControls() {
+  if (accessibilityInitialized) return;
+  accessibilityInitialized = true;
+
+  accessMenuToggleEl = document.getElementById('access-menu-toggle');
+  accessMenuPanelEl = document.getElementById('access-menu-panel');
+
+  const btnZoomIn = document.getElementById('btn-zoom-in');
+  const btnZoomOut = document.getElementById('btn-zoom-out');
+  const btnContrast = document.getElementById('btn-contrast');
+  const btnHoverRead = document.getElementById('btn-hover-read');
+
+  if (accessMenuToggleEl) {
+    accessMenuToggleEl.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleAccessPanel();
+    });
+  }
+  if (accessMenuPanelEl) {
+    accessMenuPanelEl.addEventListener('click', (event) => event.stopPropagation());
+  }
+  setAccessPanelVisibility(false);
+
+  if (btnZoomIn) {
+    btnZoomIn.addEventListener('click', () => adjustZoom(0.1));
+  }
+  if (btnZoomOut) {
+    btnZoomOut.addEventListener('click', () => adjustZoom(-0.1));
+  }
+  if (btnContrast) {
+    btnContrast.addEventListener('click', toggleContrastMode);
+  }
+  if (btnHoverRead) {
+    btnHoverRead.addEventListener('click', toggleHoverReading);
+  }
+
+  setAccessStatus('Ferramentas de acessibilidade prontas');
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
+    initAccessibilityControls();
     if (typeof authManager !== 'undefined' && authManager.isAuthenticated && authManager.isAuthenticated()) {
       currentUser = authManager.getUser();
       selectedPlan = authManager.getPlan && authManager.getPlan() || 'FREE';
@@ -999,6 +1109,7 @@ if (document.readyState === 'loading') {
     }
   });
 } else {
+  initAccessibilityControls();
   if (typeof authManager !== 'undefined' && authManager.isAuthenticated && authManager.isAuthenticated()) {
     currentUser = authManager.getUser();
     selectedPlan = authManager.getPlan && authManager.getPlan() || 'FREE';
