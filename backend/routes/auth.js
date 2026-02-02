@@ -3,6 +3,9 @@ const AuthController = require('../controllers/AuthController');
 
 const router = express.Router();
 
+// Rotas de autenticação
+router.post('/register', AuthController.register);
+router.post('/login', AuthController.login);
 router.post('/login-google', AuthController.loginWithGoogle);
 router.post('/test-login', AuthController.testLogin);
 router.post('/verify', AuthController.verify);

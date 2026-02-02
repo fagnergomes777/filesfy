@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 })
 contextBridge.exposeInMainWorld('electron', {
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+  on: (channel, callback) => ipcRenderer.on(channel, (event, ...args) => callback(...args)),
   onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (event, theme) => callback(theme))
 })

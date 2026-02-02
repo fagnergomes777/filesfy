@@ -1,13 +1,13 @@
 const pool = require('../config/database');
 
 class User {
-  static async create(googleId, email, name, avatarUrl = null) {
+  static async create(googleId, email, name, avatarUrl = null, password = null) {
     const query = `
-      INSERT INTO usuarios (google_id, email, nome, avatar_url)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO usuarios (google_id, email, nome, avatar_url, senha)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *;
     `;
-    const result = await pool.query(query, [googleId, email, name, avatarUrl]);
+    const result = await pool.query(query, [googleId, email, name, avatarUrl, password]);
     return result.rows[0];
   }
 

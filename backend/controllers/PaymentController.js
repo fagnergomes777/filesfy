@@ -1,5 +1,7 @@
+const jwt = require('jsonwebtoken');
 const Subscription = require('../models/Subscription');
 const Payment = require('../models/Payment');
+const User = require('../models/User');
 
 class PaymentController {
   static async createPaymentIntent(req, res) {
@@ -8,7 +10,7 @@ class PaymentController {
       
       if (!userId || !planType) return res.status(400).json({ error: 'Dados incompletos' });
 
-      const amount = planType === 'PRO' ? 2990 : 0;
+      const amount = planType === 'PRO' ? 1599 : 0;
       if (amount === 0) return res.status(400).json({ error: 'Plano FREE não requer pagamento' });
 
       // Criar pagamento no banco (sem Stripe se chave inválida)
@@ -20,14 +22,21 @@ class PaymentController {
         const updatedPayment = await Payment.updateStatus(payment.id, 'pago');
         
         const subscription = await Subscription.updatePlan(userId, 'PRO');
-        
+        const user = await User.findById(userId);
+        const token = jwt.sign({
+          userId,
+          email: user?.email || '',
+          plan: 'PRO'
+        }, process.env.JWT_SECRET || 'seu_secret', { expiresIn: '7d' });
+
         return res.json({ 
           success: true,
           message: 'Pagamento processado com sucesso (simulado)',
           clientSecret: 'sim_' + payment.id,
           paymentId: payment.id,
           payment: updatedPayment,
-          subscription: subscription
+          subscription: subscription,
+          token
         });
       }
 

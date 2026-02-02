@@ -339,8 +339,8 @@ async function handleTestLoginPro() {
     
     const response = await ApiClient.testLogin(testUser.email, testUser.name);
     
-    if (response.user && response.jwtToken) {
-      localStorage.setItem('auth_token', response.jwtToken);
+    if (response.user && response.token) {
+      localStorage.setItem('auth_token', response.token);
       localStorage.setItem('user_data', JSON.stringify(response.user));
       
       currentUser = response.user;
@@ -350,6 +350,7 @@ async function handleTestLoginPro() {
       showPaymentPage();
     } else {
       alert('Erro: Resposta inválida do servidor. Verifique o console.');
+      console.log('Resposta recebida:', response);
     }
   } catch (error) {
     console.error('❌ Erro em test login:', error);
@@ -1311,17 +1312,40 @@ async function loadTheme() {
     let theme = localStorage.getItem('app-theme');
     
     if (!theme) {
+      // Se não houver tema salvo, detectar a preferência do sistema
       if (typeof window.electron !== 'undefined' && window.electron.invoke) {
         theme = await window.electron.invoke('get-theme');
       } else {
-        theme = 'dark';
+        // Fallback para preferência do navegador/sistema
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
     }
     
     applyTheme(theme);
+    
+    // Ouvir mudanças de preferência do sistema
+    if (window.matchMedia) {
+      const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      darkModeQuery.addEventListener('change', (e) => {
+        // Só mudar automaticamente se não houver tema manualmente definido
+        if (!localStorage.getItem('app-theme')) {
+          applyTheme(e.matches ? 'dark' : 'light');
+        }
+      });
+    }
+    
+    // Ouvir notificações de mudança de tema do processo principal (main.js)
+    if (typeof window.electron !== 'undefined' && window.electron.on) {
+      window.electron.on('theme-changed', (theme) => {
+        // Só atualizar se não houver tema manualmente definido
+        if (!localStorage.getItem('app-theme')) {
+          applyTheme(theme);
+        }
+      });
+    }
   } catch (error) {
     console.error('Erro ao carregar tema:', error);
-    applyTheme('dark');
+    applyTheme('light');
   }
 }
 
@@ -1329,9 +1353,19 @@ function applyTheme(theme) {
   if (theme === 'light') {
     document.body.classList.remove('theme-dark');
     document.body.classList.add('theme-light');
-  } else {
+  } else if (theme === 'dark') {
     document.body.classList.remove('theme-light');
     document.body.classList.add('theme-dark');
+  } else {
+    // 'auto' - seguir preferência do sistema
+    document.body.classList.remove('theme-light', 'theme-dark');
+    // Aplicar tema baseado na preferência do sistema
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (isDark) {
+      document.body.classList.add('theme-dark');
+    } else {
+      document.body.classList.add('theme-light');
+    }
   }
   
   const btnThemeToggle = document.getElementById('btn-theme-toggle');

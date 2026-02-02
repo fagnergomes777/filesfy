@@ -6,6 +6,7 @@ const pool = require('./config/database');
 const authRoutes = require('./routes/auth');
 const paymentRoutes = require('./routes/payments');
 const subscriptionRoutes = require('./routes/subscriptions');
+const recoveryRoutes = require('./routes/recovery');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/recovery', recoveryRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
 app.use((req, res) => res.status(404).json({ error: 'Rota não encontrada' }));

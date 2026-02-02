@@ -1,8 +1,21 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Menu, nativeTheme } = require('electron')
 const path = require('path')
 
 let mainWindow
-let currentTheme = 'dark' // Tema padrão
+let currentTheme = null // Será detectado automaticamente
+
+// Detectar tema do sistema automaticamente
+function detectSystemTheme() {
+  if (nativeTheme.shouldUseDarkColors) {
+    currentTheme = 'dark'
+  } else {
+    currentTheme = 'light'
+  }
+  return currentTheme
+}
+
+// Inicializar tema na primeira execução
+detectSystemTheme()
 
 function createWindow () {
   mainWindow = new BrowserWindow({
@@ -19,6 +32,16 @@ function createWindow () {
 
   mainWindow.on('closed', () => {
     mainWindow = null
+  })
+
+  // Ouvir mudanças de tema do sistema
+  nativeTheme.on('updated', () => {
+    detectSystemTheme()
+    if (mainWindow) {
+      mainWindow.webContents.send('theme-changed', currentTheme)
+    }
+    // Atualizar menu
+    createMenu()
   })
 }
 
