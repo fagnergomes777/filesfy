@@ -16,47 +16,42 @@ const PLAN_LIMITS = {
   pro: { maxFiles: 50, maxSizeMB: 5120, maxScans: 50, maxDays: 30 }
 };
 
-// Dispositivos disponíveis
-const DEVICES = [
-  {
-    id: 'device-c',
-    name: 'Disco C:',
-    type: 'hdd',
-    size: 1000000000000,
-    freeSpace: 500000000000,
-    health: 'good',
-    icon: '💾'
-  },
-  {
-    id: 'device-d',
-    name: 'Disco D:',
-    type: 'hdd',
-    size: 2000000000000,
-    freeSpace: 1000000000000,
-    health: 'good',
-    icon: '💾'
-  },
-  {
-    id: 'device-usb',
-    name: 'Pen Drive USB',
-    type: 'usb',
-    size: 64000000000,
-    freeSpace: 32000000000,
-    health: 'good',
-    icon: '🔌'
-  },
-  {
-    id: 'device-sd',
-    name: 'Cartão SD',
-    type: 'sd',
-    size: 128000000000,
-    freeSpace: 60000000000,
-    health: 'fair',
-    icon: '📷'
-  }
-];
+// Função para gerar tamanho aleatório de dispositivo
+function generateRandomSize(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-// Arquivos simulados (como no Electron)
+// Função para gerar dispositivos com tamanhos aleatórios
+function generateDevices() {
+  return [
+    {
+      id: 'device-c',
+      name: 'Disco Local',
+      type: 'hdd',
+      sizeInBytes: generateRandomSize(250 * 1024 * 1024 * 1024, 2000 * 1024 * 1024 * 1024), // 250GB - 2TB
+      health: 'good',
+      icon: 'hdd'
+    },
+    {
+      id: 'device-usb',
+      name: 'HD Externo',
+      type: 'external',
+      sizeInBytes: generateRandomSize(500 * 1024 * 1024 * 1024, 4000 * 1024 * 1024 * 1024), // 500GB - 4TB
+      health: 'good',
+      icon: 'external'
+    },
+    {
+      id: 'device-pendrive',
+      name: 'Pendrive',
+      type: 'usb',
+      sizeInBytes: generateRandomSize(8 * 1024 * 1024 * 1024, 128 * 1024 * 1024 * 1024), // 8GB - 128GB
+      health: 'good',
+      icon: 'usb'
+    }
+  ];
+}
+
+// Limites por plano
 const ALL_FILES = [
   { id: 1, name: 'Foto_Férias_2024.jpg', size: '4.2MB', sizeInMB: 4.2, type: 'image' },
   { id: 2, name: 'Vídeo_Aniversário.mp4', size: '512MB', sizeInMB: 512, type: 'video' },
@@ -89,7 +84,8 @@ function extractUserPlanFromToken(authHeader) {
 // GET /api/recovery/devices - Lista dispositivos
 router.get('/devices', async (req, res) => {
   try {
-    res.json(DEVICES);
+    const devices = generateDevices();
+    res.json(devices);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

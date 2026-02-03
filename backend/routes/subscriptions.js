@@ -43,7 +43,7 @@ router.get('/plans', async (req, res) => {
         discount: '20%',
         interval: 'mês',
         duration: 'primeiro mês',
-        button: 'Entrar',
+        button: 'Fazer Upgrade PRO',
         storage: 5,
         recoveries: 50,
         support: '24/7 por email',

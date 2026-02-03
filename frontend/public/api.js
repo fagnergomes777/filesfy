@@ -57,6 +57,10 @@ const auth = {
     return apiCall('/auth/google-login', 'POST', { token });
   },
 
+  async testLogin(email, name) {
+    return apiCall('/auth/test-login', 'POST', { email, name });
+  },
+
   async logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

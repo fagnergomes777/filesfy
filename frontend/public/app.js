@@ -134,7 +134,7 @@ function renderWizard(page) {
 
   if (!isAuthenticated) {
     if (page === 'payment') {
-      renderProAuthPage();
+      renderLoginPageNew(wizard);
       return;
     }
 
@@ -192,76 +192,6 @@ function renderWizard(page) {
   }
 }
 
-function renderLoginPage(container) {
-  container.innerHTML = `
-    <div class="auth-container">
-      <div class="auth-card">
-        <h2>Entrar no Filesfy</h2>
-        <form id="login-form">
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
-          </div>
-          <div class="form-group">
-            <label for="password">Senha</label>
-            <input type="password" id="password" name="password" required>
-          </div>
-          <button type="submit" class="btn-primary btn-full">Entrar</button>
-        </form>
-        <div class="divider">ou</div>
-        <button id="google-login" class="btn-google">
-          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'/%3E%3Cpath fill='%3434A853' d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z'/%3E%3Cpath fill='%23FBBC05' d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z'/%3E%3Cpath fill='%23EA4335' d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'/%3E%3Cpath fill='none' d='M1 1h22v22H1z'/%3E%3C/svg%3E" alt="Google">
-          Entrar com Google
-        </button>
-        <p class="auth-link">Não tem conta? <a href="#" onclick="renderWizard('register'); return false;">Cadastre-se</a></p>
-        <button class="btn-secondary btn-full" onclick="renderWizard('subscription'); return false;" style="margin-top: var(--spacing-md);">Voltar</button>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    await login(email, password);
-  });
-}
-
-function renderRegisterPage(container) {
-  container.innerHTML = `
-    <div class="auth-container">
-      <div class="auth-card">
-        <h2>Criar Conta</h2>
-        <form id="register-form">
-          <div class="form-group">
-            <label for="name">Nome Completo</label>
-            <input type="text" id="name" name="name" required>
-          </div>
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
-          </div>
-          <div class="form-group">
-            <label for="password">Senha</label>
-            <input type="password" id="password" name="password" required>
-          </div>
-          <button type="submit" class="btn-primary btn-full">Cadastrar</button>
-        </form>
-        <p class="auth-link">Já tem conta? <a href="#" onclick="renderWizard('login'); return false;">Entrar</a></p>
-        <button class="btn-secondary btn-full" onclick="renderWizard('subscription'); return false;" style="margin-top: var(--spacing-md);">Voltar</button>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('register-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    await register(name, email, password);
-  });
-}
-
 function renderHomePage(container) {
   container.innerHTML = `
     <div class="home-container">
@@ -313,26 +243,17 @@ function renderHomePage(container) {
 function renderScanPage(container) {
   container.innerHTML = `
     <div class="scan-container">
-      <div class="scan-card">
-        <h2>Iniciar Varredura</h2>
-        <div class="form-group">
-          <label for="device-select">Selecione o dispositivo:</label>
-          <select id="device-select" required>
-            <option value="">Carregando dispositivos...</option>
-          </select>
+      <div class="scan-card" style="max-width: 800px;">
+        <h2 style="color: #0ea5e9; font-size: 24px; margin-bottom: 30px;">Selecione um Dispositivo</h2>
+        
+        <div id="devices-list" class="devices-list">
+          <div class="loading-devices">
+            <div class="spinner-small"></div>
+            <p>Carregando dispositivos...</p>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="file-type">Tipo de arquivo:</label>
-          <select id="file-type">
-            <option value="">Todos os tipos</option>
-            <option value="imagens">Imagens</option>
-            <option value="docs">Documentos</option>
-            <option value="videos">Vídeos</option>
-            <option value="audio">Áudio</option>
-          </select>
-        </div>
-        <button class="btn-primary" onclick="startScan()">Iniciar Varredura</button>
-        <button class="btn-secondary" onclick="renderWizard('home')">Voltar</button>
+        
+        <button class="btn-voltar" onclick="renderWizard('home')" style="margin-top: 30px;">Voltar</button>
       </div>
     </div>
   `;
@@ -343,42 +264,223 @@ function renderScanPage(container) {
 async function loadDevices() {
   try {
     const devices = await recovery.listDevices();
-    const select = document.getElementById('device-select');
-    select.innerHTML = devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    const devicesList = document.getElementById('devices-list');
+    
+    if (!devicesList) return;
+    
+    devicesList.innerHTML = devices.map(device => `
+      <div class="device-card" data-device-id="${device.id}" data-device-name="${device.name}">
+        <div class="device-icon">
+          ${getDeviceIcon(device.type)}
+        </div>
+        <div class="device-info">
+          <h3 class="device-name">${device.name}</h3>
+          <p class="device-capacity">${formatBytes(device.sizeInBytes)}</p>
+        </div>
+        <div class="device-arrow">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </div>
+    `).join('');
+    
+    // Adicionar event listeners
+    document.querySelectorAll('.device-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const deviceId = card.dataset.deviceId;
+        const deviceName = card.dataset.deviceName;
+        showFileTypeSelection(deviceId, deviceName);
+      });
+    });
   } catch (error) {
-    showError('Erro ao carregar dispositivos: ' + error.message);
+    const devicesList = document.getElementById('devices-list');
+    if (devicesList) {
+      devicesList.innerHTML = `
+        <div class="error-message">
+          <p>Erro ao carregar dispositivos: ${error.message}</p>
+          <button class="btn-secondary" onclick="loadDevices()">Tentar Novamente</button>
+        </div>
+      `;
+    }
   }
 }
 
-async function startScan() {
-  const deviceId = document.getElementById('device-select').value;
-  const fileType = document.getElementById('file-type').value || 'todos';
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const k = 1024;
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i];
+}
 
+function getDeviceIcon(type) {
+  const icons = {
+    'hdd': `<svg width="40" height="40" viewBox="0 0 24 24">
+              <path fill="#0ea5e9" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
+            </svg>`,
+    'usb': `<svg width="40" height="40" viewBox="0 0 24 24">
+              <path fill="#0ea5e9" d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.07c.7-.37 1.2-1.08 1.2-1.93 0-1.21-.99-2.2-2.2-2.2-1.21 0-2.2.99-2.2 2.2 0 .85.5 1.56 1.2 1.93V13c0 1.11.89 2 2 2h3v3.05c-.71.37-1.2 1.1-1.2 1.95 0 1.22.99 2.2 2.2 2.2 1.21 0 2.2-.98 2.2-2.2 0-.85-.49-1.58-1.2-1.95V15h3c1.11 0 2-.89 2-2v-2h1V7h-4z"/>
+            </svg>`,
+    'mobile': `<svg width="40" height="40" viewBox="0 0 24 24">
+                <path fill="#0ea5e9" d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+              </svg>`,
+    'external': `<svg width="40" height="40" viewBox="0 0 24 24">
+                  <path fill="#0ea5e9" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
+                </svg>`,
+    'default': `<svg width="40" height="40" viewBox="0 0 24 24">
+                  <path fill="#0ea5e9" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
+                </svg>`
+  };
+  return icons[type] || icons['default'];
+}
+
+function showFileTypeSelection(deviceId, deviceName) {
+  const wizard = document.getElementById('wizard');
+  wizard.innerHTML = `
+    <div class="scan-container">
+      <div class="scan-card" style="max-width: 800px;">
+        <h2 style="color: #0ea5e9; font-size: 24px; margin-bottom: 10px;">Tipo de Arquivo</h2>
+        <p style="color: var(--color-text-secondary); margin-bottom: 30px;">Dispositivo: ${deviceName}</p>
+        
+        <div class="file-types-list">
+          <div class="device-card" data-file-type="todos">
+            <div class="device-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                <polyline points="13 2 13 9 20 9"/>
+              </svg>
+            </div>
+            <div class="device-info">
+              <h3 class="device-name">Todos os tipos</h3>
+              <p class="device-capacity">Recuperar qualquer arquivo</p>
+            </div>
+            <div class="device-arrow">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="device-card" data-file-type="imagens">
+            <div class="device-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+            <div class="device-info">
+              <h3 class="device-name">Imagens</h3>
+              <p class="device-capacity">JPG, PNG, GIF, etc.</p>
+            </div>
+            <div class="device-arrow">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="device-card" data-file-type="documentos">
+            <div class="device-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <div class="device-info">
+              <h3 class="device-name">Documentos</h3>
+              <p class="device-capacity">PDF, DOC, TXT, etc.</p>
+            </div>
+            <div class="device-arrow">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="device-card" data-file-type="videos">
+            <div class="device-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+            </div>
+            <div class="device-info">
+              <h3 class="device-name">Vídeos</h3>
+              <p class="device-capacity">MP4, AVI, MOV, etc.</p>
+            </div>
+            <div class="device-arrow">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="device-card" data-file-type="audio">
+            <div class="device-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                <path d="M9 18V5l12-2v13"/>
+                <circle cx="6" cy="18" r="3"/>
+                <circle cx="18" cy="16" r="3"/>
+              </svg>
+            </div>
+            <div class="device-info">
+              <h3 class="device-name">Áudio</h3>
+              <p class="device-capacity">MP3, WAV, FLAC, etc.</p>
+            </div>
+            <div class="device-arrow">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn-voltar" onclick="renderWizard('scan')" style="margin-top: 30px;">Voltar</button>
+      </div>
+    </div>
+  `;
+  
+  // Adicionar event listeners
+  document.querySelectorAll('.file-types-list .device-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const fileType = card.dataset.fileType;
+      startScan(deviceId, fileType);
+    });
+  });
+}
+
+async function startScan(deviceId, fileType) {
   if (!deviceId) {
     showError('Selecione um dispositivo');
     return;
   }
 
   try {
-    const scanBtn = event.target;
-    scanBtn.disabled = true;
-    scanBtn.textContent = 'Varrendo...';
+    const wizard = document.getElementById('wizard');
+    wizard.innerHTML = `
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <h2>Iniciando varredura...</h2>
+      </div>
+    `;
 
-    const result = await recovery.startScan(deviceId, fileType);
+    const result = await recovery.startScan(deviceId, fileType || 'todos');
 
     // Guardar resultado para usar na página de recuperação
     window.currentScanResult = result;
 
     // Mostrar barra de progresso antes dos resultados
     renderScanProgress(deviceId);
-
-    scanBtn.disabled = false;
-    scanBtn.textContent = 'Iniciar Varredura';
   } catch (error) {
     showError('Erro ao iniciar varredura: ' + error.message);
-    const scanBtn = event.target;
-    scanBtn.disabled = false;
-    scanBtn.textContent = 'Iniciar Varredura';
+    setTimeout(() => renderWizard('scan'), 2000);
   }
 }
 
@@ -689,8 +791,103 @@ function selectFreePlan() {
 function selectProPlan() {
   console.log('PRO Plan Selected');
   selectedPaymentPlanId = 'pro';
-  // Vai para autenticação Google
-  renderWizard('google-auth');
+  // Vai para tela de upgrade
+  renderUpgradePage();
+}
+
+function renderUpgradePage() {
+  const wizard = document.getElementById('wizard');
+  wizard.innerHTML = `
+    <div class="upgrade-container">
+      <div class="upgrade-card">
+        <h2 class="upgrade-title">Upgrade para PRO</h2>
+        <p class="upgrade-price">Filesfy PRO - R$ 15,99</p>
+        
+        <div class="upgrade-features">
+          <h3 class="features-title">Seu plano inclui:</h3>
+          
+          <div class="features-grid">
+            <div class="features-column">
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Até 5 varridas por mês</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Máximo 10 arquivos</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Histórico 30 dias</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Armazenamento 1GB</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Sem limite de arquivos</span>
+              </div>
+            </div>
+            
+            <div class="features-column">
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Limite 1GB por varredura</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Recuperação avançada</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Sem anúncios</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Varreduras ilimitadas</span>
+              </div>
+              
+              <div class="feature-item-upgrade">
+                <svg class="feature-check" viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="#0ea5e9" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>Suporte por email</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn-primary btn-full" style="margin-top: 30px;" onclick="renderWizard('login')">Fazer Upgrade PRO</button>
+        <button class="btn-voltar" style="margin-top: 15px;" onclick="renderWizard('subscription')">Voltar</button>
+      </div>
+    </div>
+  `;
 }
 
 function startProPayment() {
@@ -810,48 +1007,6 @@ function renderFreePlanInfo() {
   `;
 }
 
-function renderProAuthPage() {
-  const wizard = document.getElementById('wizard');
-  wizard.innerHTML = `
-    <div class="auth-container">
-      <div class="auth-card">
-        <h2>Entrar com Google</h2>
-        <p>Para ativar o PRO, faça login com sua conta Google</p>
-        <button id="google-login-pro" class="btn-google">
-          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'/%3E%3Cpath fill='%3434A853' d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z'/%3E%3Cpath fill='%23FBBC05' d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z'/%3E%3Cpath fill='%23EA4335' d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'/%3E%3Cpath fill='none' d='M1 1h22v22H1z'/%3E%3C/svg%3E" alt="Google">
-          Continuar com Google
-        </button>
-        <div class="divider">ou</div>
-        <button class="btn-secondary" onclick="renderWizard('subscription')">Voltar</button>
-      </div>
-    </div>
-  `;
-
-  const btn = document.getElementById('google-login-pro');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      window.pendingProPayment = true;
-      startGoogleLogin();
-    });
-  }
-}
-
-function startGoogleLogin() {
-  const meta = document.querySelector('meta[name="google-client-id"]');
-  const clientId = meta?.content || 'YOUR_GOOGLE_CLIENT_ID';
-
-  if (window.google?.accounts?.id) {
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: handleGoogleLogin
-    });
-    google.accounts.id.prompt();
-    return;
-  }
-
-  showError('Login Google indisponível. Verifique o client_id.');
-}
-
 async function processPayment(method) {
   const wizard = document.getElementById('wizard');
   wizard.innerHTML = `
@@ -909,13 +1064,23 @@ function showPaymentSuccess() {
       </svg>
       <h2>Pagamento Realizado!</h2>
       <p>Sua assinatura PRO está ativa</p>
-      <p class="success-details">Você agora tem acesso a todas as funcionalidades premium</p>
-      <button class="btn-primary" id="btn-start-recovery-pro">Iniciar Recuperação</button>
+      <p class="success-details">Você agora tem acesso a todas as funcionalidades premium:</p>
+      <ul style="text-align: left; margin: 20px auto; max-width: 400px; color: var(--color-text-secondary);">
+        <li>✓ Recuperar até 50 arquivos por varredura</li>
+        <li>✓ Limite de 5GB por scan</li>
+        <li>✓ Todos os tipos de arquivo</li>
+        <li>✓ Suporte prioritário</li>
+      </ul>
+      <button class="btn-primary" id="btn-start-recovery-pro">Iniciar Recuperação Agora</button>
     </div>
   `;
 
   const startBtn = document.getElementById('btn-start-recovery-pro');
-  if (startBtn) startBtn.addEventListener('click', () => renderWizard('scan'));
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      renderWizard('scan');
+    });
+  }
 }
 
 async function subscribeToPlan(planId) {
@@ -1373,7 +1538,7 @@ function renderGoogleAuthPage(container) {
         </button>
         
         <button class="btn-secondary" style="width: 100%; margin-top: 15px; padding: 12px;" onclick="renderWizard('subscription')">
-          ← Voltar aos Planos
+          Voltar aos Planos
         </button>
       </div>
     </div>
@@ -1412,26 +1577,134 @@ function renderLoginPageNew(container) {
     <div class="auth-container">
       <div class="auth-card">
         <div style="text-align: center; margin-bottom: 30px;">
-          <svg style="width: 60px; height: 60px; margin: 0 auto;" viewBox="0 0 24 24">
+          <h2 style="color: var(--color-text-primary); font-weight: 600; margin-bottom: 10px; font-size: 28px;">Bem-vindo ao Filesfy</h2>
+          <p style="color: var(--color-text-secondary); margin: 0; font-size: 15px;">Faça login para continuar</p>
+        </div>
+        
+        <div id="g_id_onload"
+          data-client_id="USE_YOUR_GOOGLE_CLIENT_ID_FROM_CONSOLE.apps.googleusercontent.com"
+          data-context="signin"
+          data-ux_mode="popup"
+          data-callback="handleGoogleCallback"
+          data-auto_prompt="false">
+        </div>
+
+        <button class="google-signin-btn" id="google-signin-custom">
+          <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
+          <span>Continuar com o Google</span>
+        </button>
+
+        <div style="text-align: center; margin: 20px 0;">
+          <span style="color: var(--color-text-tertiary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">ou</span>
         </div>
-        
-        <div style="text-align: center; margin-bottom: 30px;">
-          <p style="color: #666; margin: 0;">ou</p>
-        </div>
-        
-        <button class="btn-primary btn-full" style="width: 100%; padding: 12px;" onclick="handleGoogleLogin()">
-          Entrar com Google
+
+        <button class="btn-test-login" id="test-login-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span>Entrar como Usuário Teste</span>
         </button>
         
-        <p class="auth-link" style="text-align: center; margin-top: 20px;">Não tem conta? <a href="#" onclick="renderWizard('register'); return false;">Cadastre-se</a></p>
-        
-        <button class="btn-secondary btn-full" style="width: 100%; padding: 12px; margin-top: 15px;" onclick="renderWizard('subscription'); return false;">Voltar</button>
+        <button class="btn-voltar" onclick="renderWizard('subscription'); return false;">Voltar</button>
       </div>
     </div>
   `;
+
+  // Inicializar Google Sign-In após renderizar
+  setTimeout(() => {
+    initializeGoogleSignIn();
+    initializeTestLogin();
+  }, 100);
 }
+
+/**
+ * Inicializa o botão de login de teste
+ */
+function initializeTestLogin() {
+  const button = document.getElementById('test-login-btn');
+  if (button) {
+    button.addEventListener('click', async () => {
+      try {
+        const result = await auth.testLogin('teste@filesfy.com', 'Usuário Teste');
+        
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        if (result.subscription) {
+          localStorage.setItem('subscription', JSON.stringify(result.subscription));
+        }
+        
+        currentUser = result.user;
+        currentUser.subscription = result.subscription;
+        isAuthenticated = true;
+        
+        updateAuthUI();
+        
+        // Redireciona para pagamento do plano PRO
+        selectedPaymentPlanId = 'pro';
+        showPaymentPage();
+        showSuccess('Login de teste realizado com sucesso!');
+      } catch (error) {
+        console.error('Erro no login de teste:', error);
+        showError('Erro ao fazer login de teste: ' + error.message);
+      }
+    });
+  }
+}
+
+/**
+ * Inicializa o botão do Google Sign-In
+ */
+function initializeGoogleSignIn() {
+  const button = document.getElementById('google-signin-custom');
+  if (button) {
+    button.addEventListener('click', () => {
+      // Trigger Google Sign-In
+      if (window.google && window.google.accounts) {
+        window.google.accounts.id.initialize({
+          client_id: 'USE_YOUR_GOOGLE_CLIENT_ID_FROM_CONSOLE.apps.googleusercontent.com',
+          callback: handleGoogleCallback,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        window.google.accounts.id.prompt();
+      } else {
+        console.error('Google Sign-In API não carregada');
+        showError('Erro ao carregar Google Sign-In. Tente novamente.');
+      }
+    });
+  }
+}
+
+/**
+ * Callback do Google Sign-In (chamado globalmente)
+ */
+window.handleGoogleCallback = async function(response) {
+  if (response.credential) {
+    try {
+      const result = await auth.googleLogin(response.credential);
+      
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+      if (result.subscription) {
+        localStorage.setItem('subscription', JSON.stringify(result.subscription));
+      }
+      
+      currentUser = result.user;
+      currentUser.subscription = result.subscription;
+      isAuthenticated = true;
+      
+      updateAuthUI();
+      renderWizard('home');
+      showSuccess('Login realizado com sucesso!');
+    } catch (error) {
+      console.error('Erro no Google Login:', error);
+      showError('Erro ao fazer login com Google: ' + error.message);
+    }
+  }
+};

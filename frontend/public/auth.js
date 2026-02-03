@@ -116,7 +116,7 @@ async function logout() {
   localStorage.removeItem('subscription');
   
   updateAuthUI();
-  renderWizard('login');
+  renderWizard('subscription');
 }
 
 /**
