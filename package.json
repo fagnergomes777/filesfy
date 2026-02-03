@@ -5,11 +5,11 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "concurrently \"npm run server:dev\" \"npm run electron:dev\"",
-    "start:web": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
+    "start:web": "concurrently \"npm run server:dev\" \"npm run frontend:dev\"",
+    "dev:web": "concurrently \"npm run server:dev\" \"npm run frontend:dev\"",
     "electron:dev": "electron .",
     "server:dev": "node backend/server.js",
-    "web:dev": "node web/server.js",
-    "web:static": "npx http-server web/public -p 3000 -o",
+    "frontend:dev": "node frontend/server.js",
     "init-db": "node backend/init.js"
   },
   "dependencies": {
