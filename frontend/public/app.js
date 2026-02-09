@@ -52,6 +52,7 @@ function toggleTheme() {
 function setupResponsiveMenu() {
   const toggle = document.getElementById('navbar-toggle');
   const menu = document.getElementById('navbar-menu');
+  const navLinks = document.querySelectorAll('.nav-link');
 
   if (toggle && menu) {
     toggle.addEventListener('click', () => {
@@ -60,12 +61,64 @@ function setupResponsiveMenu() {
     });
 
     // Fechar menu ao clicar em um link
-    menu.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', () => {
-        menu.classList.remove('active');
-        toggle.setAttribute('aria-expanded', 'false');
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        const sectionId = href.substring(1); // Remove o #
+        const section = document.getElementById(sectionId);
+        
+        if (section) {
+          // Atualizar links ativos
+          navLinks.forEach(l => l.classList.remove('active'));
+          link.classList.add('active');
+          
+          // Scroll para a seção
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          
+          // Fechar menu mobile
+          menu.classList.remove('active');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
       });
     });
+  }
+  
+  // Atualizar link ativo ao scroll
+  window.addEventListener('scroll', updateActiveNavLink);
+}
+
+function updateActiveNavLink() {
+  const navLinks = document.querySelectorAll('.nav-link');
+  const sections = [
+    { id: 'recupera', link: document.querySelector('a[href="#recupera"]') },
+    { id: 'dispositivos', link: document.querySelector('a[href="#dispositivos"]') },
+    { id: 'como-funciona', link: document.querySelector('a[href="#como-funciona"]') },
+    { id: 'usuarios', link: document.querySelector('a[href="#usuarios"]') },
+    { id: 'planos', link: document.querySelector('a[href="#planos"]') },
+    { id: 'suporte', link: document.querySelector('a[href="#suporte"]') }
+  ];
+  
+  let currentSection = null;
+  
+  for (let section of sections) {
+    const element = document.getElementById(section.id);
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      if (rect.top <= 150) {
+        currentSection = section;
+      } else {
+        break;
+      }
+    }
+  }
+  
+  // Remover active de todos os links
+  navLinks.forEach(link => link.classList.remove('active'));
+  
+  // Adicionar active ao link atual
+  if (currentSection && currentSection.link) {
+    currentSection.link.classList.add('active');
   }
 }
 
@@ -138,11 +191,6 @@ function renderWizard(page) {
       return;
     }
 
-    if ((page === 'scan' || page === 'recovery') && selectedAccessPlan !== 'free') {
-      renderSubscriptionPage(wizard);
-      return;
-    }
-
     // Mostrar tela de login quando solicitado
     if (page === 'login') {
       renderLoginPageNew(wizard);
@@ -157,7 +205,7 @@ function renderWizard(page) {
 
     // Para outros casos, mostrar subscription
     if (page === 'home') {
-      renderSubscriptionPage(wizard);
+      renderHomePage(wizard);
       return;
     }
   }
@@ -174,12 +222,6 @@ function renderWizard(page) {
       break;
     case 'home':
       renderHomePage(wizard);
-      break;
-    case 'scan':
-      renderScanPage(wizard);
-      break;
-    case 'recovery':
-      renderRecoveryPage(wizard);
       break;
     case 'subscription':
       renderSubscriptionPage(wizard);
@@ -198,522 +240,246 @@ function renderHomePage(container) {
       <div class="hero-section">
         <div class="hero-content">
           <h2>Recupere seus dados com segurança</h2>
-          <p>Filesfy é a solução profissional mais confiável para recuperação de arquivos deletados.</p>
+          <p>Filesfy é a solução profissional mais confiável para recuperação de arquivos deletados</p>
           <div class="hero-buttons">
-            <button class="btn-primary" onclick="renderWizard('scan')">Iniciar Recuperação</button>
-            <button class="btn-secondary" onclick="renderWizard('subscription')">Ver Planos</button>
+            <button class="btn-primary btn-large" onclick="downloadDesktopApp()">
+              📥 Baixar Versão Desktop
+            </button>
+            <button class="btn-secondary btn-large" onclick="renderWizard('subscription')">
+              Ver Planos
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="features-section">
-        <h3>Por que escolher Filesfy?</h3>
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon">🔒</div>
-            <h4>Segurança</h4>
-            <p>Criptografia end-to-end de todos os dados recuperados</p>
+      <div class="use-cases-section" id="recupera">
+        <h3>Recupere seus dados em qualquer situação</h3>
+        <div class="use-cases-grid">
+          <div class="use-case-card">
+            <div class="use-case-icon"><img src="https://img.icons8.com/fluency/96/trash.png" alt="Trash"></div>
+            <h4>Arquivos Deletados</h4>
+            <p>Recupere arquivos excluídos pelo comando Shift+Del ou esvaziamento da Lixeira</p>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h4>Rápido</h4>
-            <p>Tecnologia otimizada para varredura e recuperação veloz</p>
+          <div class="use-case-card">
+            <div class="use-case-icon"><img src="https://img.icons8.com/fluency/96/database-restore.png" alt="Format Disk"></div>
+            <h4>Formatação Acidental</h4>
+            <p>Recupere dados de discos formatados rápido ou completamente</p>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <h4>Eficiente</h4>
-            <p>Taxa de recuperação de até 99% dos arquivos deletados</p>
+          <div class="use-case-card">
+            <div class="use-case-icon"><img src="https://img.icons8.com/fluency/96/error.png" alt="Error"></div>
+            <h4>Partição Corrompida</h4>
+            <p>Recupere dados de partições apagadas, corrompidas ou inacessíveis</p>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon">🌍</div>
-            <h4>Suporte</h4>
-            <p>Atendimento 24/7 em múltiplos idiomas</p>
+          <div class="use-case-card">
+            <div class="use-case-icon"><img src="https://img.icons8.com/fluency/96/virus.png" alt="Virus"></div>
+            <h4>Ataque de Vírus</h4>
+            <p>Recupere arquivos criptografados ou comprometidos por ransomware</p>
+          </div>
+          <div class="use-case-card">
+            <div class="use-case-icon"><img src="https://img.icons8.com/fluency/96/usb-2.png" alt="USB"></div>
+            <h4>Dispositivo USB</h4>
+            <p>Recupere dados de pen drives, cartões SD e unidades removíveis</p>
+          </div>
+          <div class="use-case-card">
+            <div class="use-case-icon"><img src="https://img.icons8.com/fluency/96/warning-shield.png" alt="System Error"></div>
+            <h4>Erro do Sistema</h4>
+            <p>Recupere dados após falhas do sistema ou reinstalação do SO</p>
           </div>
         </div>
       </div>
 
-      <div class="subscription-cta">
-        <h3>Escolha o plano ideal para você</h3>
-        <button class="btn-primary" onclick="renderWizard('subscription')">Ver Planos Disponíveis</button>
+      <div class="how-it-works-section" id="como-funciona">
+        <h3>Como Funciona - 3 Passos Simples</h3>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <h4>Selecione o Dispositivo</h4>
+            <p>Escolha o disco rígido, pen drive ou cartão de memória onde os dados foram perdidos</p>
+            <div class="step-icon"><img src="https://img.icons8.com/fluency/96/folder-invoices.png" alt="Select"></div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <h4>Digitalize</h4>
+            <p>Filesfy escaneia profundamente seu dispositivo para encontrar todos os arquivos recuperáveis</p>
+            <div class="step-icon"><img src="https://img.icons8.com/fluency/96/search.png" alt="Scan"></div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <h4>Recupere</h4>
+            <p>Selecione os arquivos desejados e recupere-os com um clique</p>
+            <div class="step-icon"><img src="https://img.icons8.com/fluency/96/checkmark.png" alt="Recover"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="devices-section" id="dispositivos">
+        <h3>Dispositivos de armazenamento suportados para recuperar:</h3>
+        <div class="devices-grid">
+          <div class="device-card">
+            <div class="device-icon"><img src="https://img.icons8.com/fluency/96/hdd.png" alt="HDD"></div>
+            <h4>Discos Rígidos</h4>
+            <p>Suporte para recuperar unidades de disco rígido de até 16 TB</p>
+          </div>
+          <div class="device-card">
+            <div class="device-icon"><img src="https://img.icons8.com/fluency/96/ssd.png" alt="SSD"></div>
+            <h4>Unidades Removíveis</h4>
+            <p>Discos rígidos externos e SSD para desktop/portáteis</p>
+          </div>
+          <div class="device-card">
+            <div class="device-icon"><img src="https://img.icons8.com/fluency/96/laptop.png" alt="Laptop"></div>
+            <h4>Notebooks e PCs</h4>
+            <p>Lixeira, unidades internas, partições</p>
+          </div>
+          <div class="device-card">
+            <div class="device-icon"><img src="https://img.icons8.com/fluency/96/usb-on.png" alt="USB"></div>
+            <h4>Unidades Flash</h4>
+            <p>Unidades USB, Jump Drives, Pen Drives, Thumb Drives...</p>
+          </div>
+          <div class="device-card">
+            <div class="device-icon"><img src="https://img.icons8.com/fluency/96/sd.png" alt="SD Card"></div>
+            <h4>Cartões de Memória</h4>
+            <p>Cartão SD/CF, microSD, miniSD, Sandisk, cartão de memória...</p>
+          </div>
+          <div class="device-card">
+            <div class="device-icon"><img src="https://img.icons8.com/fluency/96/camera.png" alt="Camera"></div>
+            <h4>Outras Mídias de Armazenamento</h4>
+            <p>Câmera, leitor de música/vídeo, unidade de disquete, unidade zip, etc.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonials-section" id="usuarios">
+        <h3>O que nossos usuários dizem</h3>
+        <div class="testimonials-grid">
+          <div class="testimonial-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <p class="testimonial-text">"Perdi 2GB de fotos importantes no meu cartão SD e este programa recuperou tudo! Recomendo demais!"</p>
+            <p class="testimonial-author">— Gabriel Brito</p>
+          </div>
+          <div class="testimonial-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <p class="testimonial-text">"Excelente programa, cumpre o que promete. Rápido e fácil para recuperação. Muito bom mesmo!"</p>
+            <p class="testimonial-author">— João Henrique</p>
+          </div>
+          <div class="testimonial-card">
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+            <p class="testimonial-text">"Achei surpreendente! Recuperou ficheiros que já nem lembrava que tive no disco. Simplesmente fantástico!"</p>
+            <p class="testimonial-author">— Joaquim Fernandes</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="trust-section" id="planos">
+        <h3>Você está em boas mãos</h3>
+        <div class="trust-stats">
+          <div class="stat-item">
+            <div class="stat-number">10M+</div>
+            <div class="stat-label">Usuários Globais</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">15+</div>
+            <div class="stat-label">Anos de Experiência</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">99%</div>
+            <div class="stat-label">Taxa de Sucesso</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Suporte Técnico</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-section">
+        <h3>Pronto para recuperar seus dados?</h3>
+        <p>Escolha seu plano e comece hoje mesmo</p>
+        <button class="btn-primary btn-large" onclick="renderWizard('subscription')">Ver Planos Disponíveis</button>
+      </div>
+
+      <div class="support-section" id="suporte">
+        <h3>Suporte Técnico 24/7</h3>
+        <div class="support-grid">
+          <div class="support-card">
+            <div class="support-icon"><img src="https://img.icons8.com/fluency/96/chat.png" alt="Chat em Tempo Real"></div>
+            <h4>Chat em Tempo Real</h4>
+            <p>Fale com nossos especialistas agora mesmo</p>
+            <button class="btn-secondary">Iniciar Chat</button>
+          </div>
+          <div class="support-card">
+            <div class="support-icon"><img src="https://img.icons8.com/fluency/96/email.png" alt="Email"></div>
+            <h4>Email</h4>
+            <p>suporte@filesfy.com - Respondemos em até 2 horas</p>
+            <button class="btn-secondary">Enviar Email</button>
+          </div>
+          <div class="support-card">
+            <div class="support-icon"><img src="https://img.icons8.com/fluency/96/phone.png" alt="Telefone"></div>
+            <h4>Telefone</h4>
+            <p>+55 (11) 3000-0000 - Disponível 24/7</p>
+            <button class="btn-secondary">Ligar Agora</button>
+          </div>
+          <div class="support-card">
+            <div class="support-icon"><img src="https://img.icons8.com/fluency/96/help.png" alt="FAQ"></div>
+            <h4>FAQ</h4>
+            <p>Respostas para as perguntas mais comuns</p>
+            <button class="btn-secondary">Ver FAQ</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
 }
 
 function renderScanPage(container) {
-  container.innerHTML = `
-    <div class="scan-container">
-      <div class="scan-card" style="max-width: 800px;">
-        <h2 style="color: #0ea5e9; font-size: 24px; margin-bottom: 30px;">Selecione um Dispositivo</h2>
-        
-        <div id="devices-list" class="devices-list">
-          <div class="loading-devices">
-            <div class="spinner-small"></div>
-            <p>Carregando dispositivos...</p>
-          </div>
-        </div>
-        
-        <button class="btn-voltar" onclick="renderWizard('home')" style="margin-top: 30px;">Voltar</button>
-      </div>
-    </div>
-  `;
+  // Redirecionar para home na versão web
+  renderHomePage(container);
+}
 
-  loadDevices();
+function downloadDesktopApp() {
+  const downloadUrl = 'https://github.com/filesfy/filesfy-desktop/releases/latest/download/Filesfy-Setup.exe';
+  showSuccess('Download iniciado! Verifique seus downloads.');
+  
+  // Criar link temporário para download
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = 'Filesfy-Setup.exe';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 async function loadDevices() {
-  try {
-    const devices = await recovery.listDevices();
-    const devicesList = document.getElementById('devices-list');
-    
-    if (!devicesList) return;
-    
-    devicesList.innerHTML = devices.map(device => `
-      <div class="device-card" data-device-id="${device.id}" data-device-name="${device.name}">
-        <div class="device-icon">
-          ${getDeviceIcon(device.type)}
-        </div>
-        <div class="device-info">
-          <h3 class="device-name">${device.name}</h3>
-          <p class="device-capacity">${formatBytes(device.sizeInBytes)}</p>
-        </div>
-        <div class="device-arrow">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-      </div>
-    `).join('');
-    
-    // Adicionar event listeners
-    document.querySelectorAll('.device-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const deviceId = card.dataset.deviceId;
-        const deviceName = card.dataset.deviceName;
-        showFileTypeSelection(deviceId, deviceName);
-      });
-    });
-  } catch (error) {
-    const devicesList = document.getElementById('devices-list');
-    if (devicesList) {
-      devicesList.innerHTML = `
-        <div class="error-message">
-          <p>Erro ao carregar dispositivos: ${error.message}</p>
-          <button class="btn-secondary" onclick="loadDevices()">Tentar Novamente</button>
-        </div>
-      `;
-    }
-  }
-}
-
-function formatBytes(bytes) {
-  if (!bytes || bytes === 0) return '0 B';
-  
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const k = 1024;
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i];
-}
-
-function getDeviceIcon(type) {
-  const icons = {
-    'hdd': `<svg width="40" height="40" viewBox="0 0 24 24">
-              <path fill="#0ea5e9" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
-            </svg>`,
-    'usb': `<svg width="40" height="40" viewBox="0 0 24 24">
-              <path fill="#0ea5e9" d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.07c.7-.37 1.2-1.08 1.2-1.93 0-1.21-.99-2.2-2.2-2.2-1.21 0-2.2.99-2.2 2.2 0 .85.5 1.56 1.2 1.93V13c0 1.11.89 2 2 2h3v3.05c-.71.37-1.2 1.1-1.2 1.95 0 1.22.99 2.2 2.2 2.2 1.21 0 2.2-.98 2.2-2.2 0-.85-.49-1.58-1.2-1.95V15h3c1.11 0 2-.89 2-2v-2h1V7h-4z"/>
-            </svg>`,
-    'mobile': `<svg width="40" height="40" viewBox="0 0 24 24">
-                <path fill="#0ea5e9" d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
-              </svg>`,
-    'external': `<svg width="40" height="40" viewBox="0 0 24 24">
-                  <path fill="#0ea5e9" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
-                </svg>`,
-    'default': `<svg width="40" height="40" viewBox="0 0 24 24">
-                  <path fill="#0ea5e9" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.96l3.49-4.5-3.7-3.02-1.99 2.54-2.28-2.97H6.5l3.54 4.7-2.08 2.71h2.97z"/>
-                </svg>`
-  };
-  return icons[type] || icons['default'];
+  // Funcionalidade de recuperação disponível apenas na versão desktop
+  console.log('Recuperação de arquivos disponível apenas no aplicativo desktop');
 }
 
 function showFileTypeSelection(deviceId, deviceName) {
-  const wizard = document.getElementById('wizard');
-  wizard.innerHTML = `
-    <div class="scan-container">
-      <div class="scan-card" style="max-width: 800px;">
-        <h2 style="color: #0ea5e9; font-size: 24px; margin-bottom: 10px;">Tipo de Arquivo</h2>
-        <p style="color: var(--color-text-secondary); margin-bottom: 30px;">Dispositivo: ${deviceName}</p>
-        
-        <div class="file-types-list">
-          <div class="device-card" data-file-type="todos">
-            <div class="device-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                <polyline points="13 2 13 9 20 9"/>
-              </svg>
-            </div>
-            <div class="device-info">
-              <h3 class="device-name">Todos os tipos</h3>
-              <p class="device-capacity">Recuperar qualquer arquivo</p>
-            </div>
-            <div class="device-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-          
-          <div class="device-card" data-file-type="imagens">
-            <div class="device-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-            </div>
-            <div class="device-info">
-              <h3 class="device-name">Imagens</h3>
-              <p class="device-capacity">JPG, PNG, GIF, etc.</p>
-            </div>
-            <div class="device-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-          
-          <div class="device-card" data-file-type="documentos">
-            <div class="device-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-              </svg>
-            </div>
-            <div class="device-info">
-              <h3 class="device-name">Documentos</h3>
-              <p class="device-capacity">PDF, DOC, TXT, etc.</p>
-            </div>
-            <div class="device-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-          
-          <div class="device-card" data-file-type="videos">
-            <div class="device-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
-                <polygon points="23 7 16 12 23 17 23 7"/>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-              </svg>
-            </div>
-            <div class="device-info">
-              <h3 class="device-name">Vídeos</h3>
-              <p class="device-capacity">MP4, AVI, MOV, etc.</p>
-            </div>
-            <div class="device-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-          
-          <div class="device-card" data-file-type="audio">
-            <div class="device-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
-                <path d="M9 18V5l12-2v13"/>
-                <circle cx="6" cy="18" r="3"/>
-                <circle cx="18" cy="16" r="3"/>
-              </svg>
-            </div>
-            <div class="device-info">
-              <h3 class="device-name">Áudio</h3>
-              <p class="device-capacity">MP3, WAV, FLAC, etc.</p>
-            </div>
-            <div class="device-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-        </div>
-        
-        <button class="btn-voltar" onclick="renderWizard('scan')" style="margin-top: 30px;">Voltar</button>
-      </div>
-    </div>
-  `;
-  
-  // Adicionar event listeners
-  document.querySelectorAll('.file-types-list .device-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const fileType = card.dataset.fileType;
-      startScan(deviceId, fileType);
-    });
-  });
+  // Redirecionar para download do desktop
+  downloadDesktopApp();
 }
 
 async function startScan(deviceId, fileType) {
-  if (!deviceId) {
-    showError('Selecione um dispositivo');
-    return;
-  }
-
-  try {
-    const wizard = document.getElementById('wizard');
-    wizard.innerHTML = `
-      <div class="loading-container">
-        <div class="spinner"></div>
-        <h2>Iniciando varredura...</h2>
-      </div>
-    `;
-
-    const result = await recovery.startScan(deviceId, fileType || 'todos');
-
-    // Guardar resultado para usar na página de recuperação
-    window.currentScanResult = result;
-
-    // Mostrar barra de progresso antes dos resultados
-    renderScanProgress(deviceId);
-  } catch (error) {
-    showError('Erro ao iniciar varredura: ' + error.message);
-    setTimeout(() => renderWizard('scan'), 2000);
-  }
+  // Redirecionar para download do desktop
+  downloadDesktopApp();
 }
 
 function renderScanProgress(deviceId) {
-  const wizard = document.getElementById('wizard');
-  let progress = 0;
-
-  wizard.innerHTML = `
-    <div class="scan-container">
-      <div class="scan-card">
-        <h2>Varrendo Dispositivo...</h2>
-        <div class="progress-section">
-          <div class="progress-bar">
-            <div class="progress-fill" id="scan-progress-fill" style="width: 0%;"></div>
-          </div>
-          <p class="progress-text" id="scan-progress-text">0%</p>
-          <p class="progress-details" id="scan-progress-details">Analisando setores em ${deviceId}...</p>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const interval = setInterval(() => {
-    progress += Math.random() * 18;
-    if (progress > 100) progress = 100;
-
-    const fill = document.getElementById('scan-progress-fill');
-    const text = document.getElementById('scan-progress-text');
-    const details = document.getElementById('scan-progress-details');
-
-    if (fill) fill.style.width = `${progress}%`;
-    if (text) text.textContent = `${Math.floor(progress)}%`;
-    if (details) details.textContent = `Analisando...`;
-
-    if (progress >= 100) {
-      clearInterval(interval);
-      setTimeout(() => renderRecoveryPage(document.getElementById('wizard')), 600);
-    }
-  }, 350);
+  // Não utilizado na versão web
 }
 
 async function recoverFiles() {
-  if (!isAuthenticated && selectedAccessPlan !== 'free') {
-    renderSubscriptionPage(document.getElementById('wizard'));
-    return;
-  }
-
-  try {
-    // Coletar arquivos selecionados
-    const checkboxes = document.querySelectorAll('.file-checkbox:checked');
-    if (checkboxes.length === 0) {
-      showError('Selecione pelo menos um arquivo');
-      return;
-    }
-
-    const selectedFiles = Array.from(checkboxes).map(cb => {
-      const item = cb.closest('.result-item');
-      const fileId = item.dataset.fileId;
-      const fileName = item.querySelector('.file-name').textContent;
-      const fileSize = item.querySelector('.file-size').textContent;
-      
-      // Extrair tamanho em MB
-      const sizeMatch = fileSize.match(/(\d+\.?\d*)\s*(MB|GB|KB)/);
-      let sizeInMB = 0;
-      if (sizeMatch) {
-        const value = parseFloat(sizeMatch[1]);
-        const unit = sizeMatch[2];
-        if (unit === 'GB') sizeInMB = value * 1024;
-        else if (unit === 'MB') sizeInMB = value;
-        else if (unit === 'KB') sizeInMB = value / 1024;
-      }
-
-      return {
-        id: fileId,
-        name: fileName,
-        sizeInMB
-      };
-    });
-
-    // Simular destino (em produção seria seleção do usuário)
-    const destination = 'C:\\Recuperados';
-
-    // Mostrar barra de progresso de recuperação
-    renderRecoveryProgress(selectedFiles.length);
-
-    const result = await recovery.recoverFiles(selectedFiles, destination);
-
-    setTimeout(() => {
-      showSuccess(`${selectedFiles.length} arquivo(s) recuperado(s) com sucesso!`);
-      renderWizard('home');
-    }, 1200);
-  } catch (error) {
-    showError('Erro ao recuperar arquivos: ' + error.message);
-  }
+  // Redirecionar para download do desktop
+  downloadDesktopApp();
 }
 
 function renderRecoveryProgress(filesCount) {
-  const wizard = document.getElementById('wizard');
-  let progress = 0;
-
-  wizard.innerHTML = `
-    <div class="recovery-container">
-      <div class="recovery-card">
-        <h2>Recuperando Arquivos...</h2>
-        <div class="progress-section">
-          <div class="progress-bar">
-            <div class="progress-fill" id="recover-progress-fill" style="width: 0%;"></div>
-          </div>
-          <p class="progress-text" id="recover-progress-text">0%</p>
-          <p class="progress-details">Recuperando ${filesCount} arquivo(s)...</p>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const interval = setInterval(() => {
-    progress += Math.random() * 20;
-    if (progress > 100) progress = 100;
-
-    const fill = document.getElementById('recover-progress-fill');
-    const text = document.getElementById('recover-progress-text');
-    if (fill) fill.style.width = `${progress}%`;
-    if (text) text.textContent = `${Math.floor(progress)}%`;
-
-    if (progress >= 100) {
-      clearInterval(interval);
-    }
-  }, 300);
+  // Não utilizado na versão web
 }
 
 function renderRecoveryPage(container) {
-  if (!isAuthenticated && selectedAccessPlan !== 'free') {
-    renderSubscriptionPage(container);
-    return;
-  }
-
-  const scanResult = window.currentScanResult;
-  
-  if (!scanResult || !scanResult.results) {
-    container.innerHTML = `
-      <div class="recovery-container">
-        <div class="recovery-card">
-          <h2>Erro ao carregar resultados</h2>
-          <p>Nenhum arquivo encontrado. Tente novamente.</p>
-          <button class="btn-secondary" onclick="renderWizard('scan')">Voltar</button>
-        </div>
-      </div>
-    `;
-    return;
-  }
-
-  const results = scanResult.results || [];
-  const recoverableCount = results.filter(f => f.canRecover).length;
-  const totalSize = results
-    .filter(f => f.canRecover)
-    .reduce((sum, f) => sum + f.sizeInMB, 0)
-    .toFixed(2);
-
-  let html = `
-    <div class="recovery-container">
-      <div class="recovery-card">
-        <h2>Arquivos Encontrados</h2>
-        <div class="recovery-info">
-          <p><strong>Tipo:</strong> ${scanResult.fileType || 'todos'} | 
-             <strong>Plano:</strong> ${(scanResult.plan || 'FREE').toUpperCase()} | 
-             <strong>Limite:</strong> ${scanResult.limits.maxFiles} arquivos, ${scanResult.limits.maxSizeMB}MB</p>
-          <p><strong>Encontrados:</strong> ${recoverableCount} de ${results.length} arquivo(s) | 
-             <strong>Tamanho:</strong> ${totalSize}MB</p>
-        </div>
-        
-        <div class="results-header">
-          <button class="btn-small" id="btn-select-all">Selecionar Tudo</button>
-          <span class="results-count"><span id="selected-count">0</span> / ${recoverableCount} selecionados</span>
-        </div>
-
-        <div class="results-list">
-  `;
-
-  results.forEach(file => {
-    const disabled = !file.canRecover ? 'disabled' : '';
-    const blockedIcon = file.blockedReason ? '🔒' : '✓';
-    const blockedMsg = file.blockedReason ? `<p class="blocked-reason">${blockedIcon} ${file.blockedReason}</p>` : '';
-    const fileIcon = getFileIcon(file.type);
-
-    html += `
-      <div class="result-item ${disabled}" data-file-id="${file.id}">
-        <input type="checkbox" class="file-checkbox" ${disabled}>
-        <span class="file-icon">${fileIcon}</span>
-        <div class="file-info">
-          <p class="file-name">${file.name}</p>
-          <p class="file-size">${file.size}</p>
-          ${blockedMsg}
-        </div>
-      </div>
-    `;
-  });
-
-  html += `
-        </div>
-
-        <div class="recovery-actions">
-          <button class="btn-primary" onclick="recoverFiles()">Recuperar Selecionados</button>
-          <button class="btn-secondary" onclick="renderWizard('scan')">Voltar</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  container.innerHTML = html;
-
-  // Adicionar event listeners
-  setTimeout(() => {
-    const selectAllBtn = document.getElementById('btn-select-all');
-    const checkboxes = document.querySelectorAll('.file-checkbox:not([disabled])');
-    const selectedCount = document.getElementById('selected-count');
-
-    if (selectAllBtn) {
-      selectAllBtn.addEventListener('click', () => {
-        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-        checkboxes.forEach(cb => cb.checked = !allChecked);
-        updateSelectedCount();
-      });
-    }
-
-    checkboxes.forEach(cb => {
-      cb.addEventListener('change', updateSelectedCount);
-    });
-
-    function updateSelectedCount() {
-      const count = document.querySelectorAll('.file-checkbox:checked').length;
-      selectedCount.textContent = count;
-    }
-  }, 100);
+  // Redirecionar para home na versão web
+  renderHomePage(container);
 }
 
 function getFileIcon(type) {
@@ -1374,137 +1140,309 @@ function openSupportModal(section) {
 function openLegalModal(section) {
   const modal = document.getElementById('modal-dialog');
   const modalBody = document.getElementById('modal-body');
-  const wizardContainer = document.getElementById('wizard');
-  
-  // Posicionar modal no topo visível do wizard-container
-  if (wizardContainer) {
-    const scrollTop = wizardContainer.scrollTop;
-    modal.style.top = `${scrollTop + 50}px`;
-  }
   
   let content = '';
   
   if (section === 'privacy') {
     content = `
       <h2>Política de Privacidade</h2>
-      <p><strong>Última atualização: 31 de janeiro de 2026</strong></p>
+      <p><strong>Última atualização: 08 de fevereiro de 2026</strong></p>
       
       <h3>1. Introdução</h3>
-      <p>A Filesfy Inc. respeita sua privacidade e se compromete a proteger seus dados pessoais. Esta Política de Privacidade explica como coletamos, usamos e protegemos suas informações.</p>
+      <p>A Filesfy Inc. ("nós", "nosso" ou "Filesfy") respeita sua privacidade e está comprometida em proteger seus dados pessoais em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 - LGPD). Esta Política de Privacidade explica como coletamos, usamos, armazenamos e protegemos suas informações.</p>
       
-      <h3>2. Dados que Coletamos</h3>
+      <h3>2. Base Legal e Finalidade do Tratamento</h3>
+      <p>Coletamos e tratamos seus dados pessoais com base nas seguintes hipóteses legais:</p>
       <ul>
-        <li>Informações de conta: nome, email, senha (criptografada)</li>
-        <li>Informações de dispositivo: identificadores de dispositivo, tipos de arquivo procurados</li>
-        <li>Dados de uso: histórico de scans, plano utilizado</li>
-        <li>Informações técnicas: IP, navegador, sistema operacional</li>
+        <li><strong>Consentimento:</strong> Para envio de comunicações de marketing e newsletters</li>
+        <li><strong>Execução de Contrato:</strong> Para fornecimento dos serviços de recuperação de dados</li>
+        <li><strong>Obrigação Legal:</strong> Para cumprimento de obrigações fiscais e regulatórias</li>
+        <li><strong>Legítimo Interesse:</strong> Para melhoria dos serviços e segurança da plataforma</li>
       </ul>
       
-      <h3>3. Como Usamos Seus Dados</h3>
+      <h3>3. Dados Pessoais Coletados</h3>
       <ul>
-        <li>Fornecer e melhorar nossos serviços</li>
-        <li>Autenticar sua conta e processar pagamentos</li>
-        <li>Comunicar sobre atualizações e ofertas (apenas com consentimento)</li>
-        <li>Analisar uso e melhorar a experiência do usuário</li>
-        <li>Cumprir obrigações legais</li>
+        <li><strong>Dados de Identificação:</strong> Nome completo, endereço de e-mail, telefone</li>
+        <li><strong>Dados de Autenticação:</strong> Credenciais de login, senha criptografada (hash SHA-256)</li>
+        <li><strong>Dados de Pagamento:</strong> Informações de cartão de crédito (processadas via Stripe - não armazenamos dados de cartão)</li>
+        <li><strong>Dados de Navegação:</strong> Endereço IP, tipo de navegador, sistema operacional, cookies</li>
+        <li><strong>Dados de Uso:</strong> Histórico de scans, tipos de arquivos recuperados, plano contratado</li>
+        <li><strong>Dados de Dispositivo:</strong> Identificadores de dispositivo, modelo, versão do sistema</li>
       </ul>
       
-      <h3>4. Segurança de Dados</h3>
-      <p>Usamos criptografia AES-256 para todos os dados sensíveis e seguimos as normas LGPD e GDPR.</p>
+      <h3>4. Finalidades do Tratamento</h3>
+      <p>Utilizamos seus dados pessoais para:</p>
+      <ul>
+        <li>Criar e gerenciar sua conta de usuário</li>
+        <li>Fornecer os serviços de recuperação de dados contratados</li>
+        <li>Processar pagamentos e emitir notas fiscais</li>
+        <li>Enviar comunicações sobre atualizações, novos recursos e ofertas (com consentimento)</li>
+        <li>Prestar suporte técnico e atendimento ao cliente</li>
+        <li>Melhorar nossos serviços através de análises e estatísticas</li>
+        <li>Garantir a segurança e prevenir fraudes</li>
+        <li>Cumprir obrigações legais e regulatórias</li>
+      </ul>
       
-      <h3>5. Seus Direitos</h3>
-      <p>Você tem direito a acessar, corrigir ou deletar seus dados. Contate suporte@filesfy.com para solicitar.</p>
+      <h3>5. Compartilhamento de Dados</h3>
+      <p>Seus dados pessoais podem ser compartilhados com:</p>
+      <ul>
+        <li><strong>Processadores de Pagamento:</strong> Stripe (para processamento de transações)</li>
+        <li><strong>Provedores de Infraestrutura:</strong> Serviços de hospedagem e armazenamento em nuvem</li>
+        <li><strong>Ferramentas de Análise:</strong> Google Analytics (dados anonimizados)</li>
+        <li><strong>Autoridades Competentes:</strong> Quando exigido por lei ou ordem judicial</li>
+      </ul>
+      <p>Não vendemos, alugamos ou comercializamos seus dados pessoais com terceiros.</p>
+      
+      <h3>6. Segurança e Armazenamento</h3>
+      <p>Implementamos medidas técnicas e organizacionais para proteger seus dados:</p>
+      <ul>
+        <li>Criptografia SSL/TLS para transmissão de dados</li>
+        <li>Criptografia AES-256 para dados em repouso</li>
+        <li>Controles de acesso baseados em função (RBAC)</li>
+        <li>Monitoramento contínuo de segurança</li>
+        <li>Backups regulares e redundância de dados</li>
+      </ul>
+      <p><strong>Retenção:</strong> Mantemos seus dados pelo período necessário para cumprir as finalidades descritas ou conforme exigido por lei (mínimo de 5 anos para dados fiscais).</p>
+      
+      <h3>7. Seus Direitos (Art. 18 da LGPD)</h3>
+      <p>Você possui os seguintes direitos sobre seus dados pessoais:</p>
+      <ul>
+        <li><strong>Confirmação e Acesso:</strong> Confirmar a existência de tratamento e acessar seus dados</li>
+        <li><strong>Correção:</strong> Corrigir dados incompletos, inexatos ou desatualizados</li>
+        <li><strong>Anonimização ou Bloqueio:</strong> Solicitar anonimização ou bloqueio de dados desnecessários</li>
+        <li><strong>Eliminação:</strong> Solicitar exclusão de dados tratados com consentimento</li>
+        <li><strong>Portabilidade:</strong> Receber seus dados em formato estruturado e interoperável</li>
+        <li><strong>Informação sobre Compartilhamento:</strong> Saber com quem compartilhamos seus dados</li>
+        <li><strong>Revogação do Consentimento:</strong> Revogar consentimento a qualquer momento</li>
+        <li><strong>Oposição:</strong> Opor-se ao tratamento em determinadas situações</li>
+      </ul>
+      <p>Para exercer seus direitos, entre em contato através de <strong>privacidade@filesfy.com</strong> ou <strong>dpo@filesfy.com</strong>.</p>
+      
+      <h3>8. Cookies e Tecnologias Similares</h3>
+      <p>Utilizamos cookies essenciais, funcionais e analíticos. Você pode gerenciar suas preferências nas configurações do navegador. Consulte nossa Política de Cookies para mais detalhes.</p>
+      
+      <h3>9. Transferência Internacional de Dados</h3>
+      <p>Alguns de nossos provedores de serviços podem estar localizados fora do Brasil. Garantimos que tais transferências ocorram apenas com salvaguardas adequadas conforme exigido pela LGPD.</p>
+      
+      <h3>10. Alterações nesta Política</h3>
+      <p>Podemos atualizar esta Política periodicamente. Notificaremos sobre mudanças significativas por e-mail ou através da plataforma.</p>
+      
+      <h3>11. Encarregado de Proteção de Dados (DPO)</h3>
+      <p><strong>Nome:</strong> Departamento de Privacidade Filesfy<br>
+      <strong>E-mail:</strong> dpo@filesfy.com<br>
+      <strong>Endereço:</strong> Av. Paulista, 1000 - São Paulo/SP</p>
+      
+      <h3>12. Autoridade Nacional de Proteção de Dados (ANPD)</h3>
+      <p>Você pode apresentar reclamações à ANPD em <a href="https://www.gov.br/anpd" target="_blank">www.gov.br/anpd</a></p>
+    `;
+  } else if (section === 'license') {
+    content = `
+      <h2>Contrato de Licença de Uso</h2>
+      <p><strong>Última atualização: 08 de fevereiro de 2026</strong></p>
+      
+      <h3>1. Outorga de Licença</h3>
+      <p>A Filesfy Inc. ("Licenciante") concede a você ("Licenciado") uma licença pessoal, intransferível, não exclusiva e revogável para utilizar o software Filesfy ("Software") conforme os termos deste contrato.</p>
+      
+      <h3>2. Escopo da Licença</h3>
+      <p><strong>Plano FREE:</strong></p>
+      <ul>
+        <li>Recuperação de até 5 arquivos por sessão</li>
+        <li>Limite de 300MB por scan</li>
+        <li>Uso em 1 dispositivo</li>
+        <li>Funcionalidades básicas de recuperação</li>
+      </ul>
+      <p><strong>Plano PRO (Licença Paga):</strong></p>
+      <ul>
+        <li>Recuperação ilimitada de arquivos</li>
+        <li>Limite de 128GB por scan</li>
+        <li>Uso em até 3 dispositivos</li>
+        <li>Suporte prioritário</li>
+        <li>Atualizações gratuitas durante vigência da licença</li>
+      </ul>
+      
+      <h3>3. Restrições de Uso</h3>
+      <p>O Licenciado NÃO está autorizado a:</p>
+      <ul>
+        <li>Fazer engenharia reversa, descompilar ou desmontar o Software</li>
+        <li>Remover, alterar ou ocultar avisos de direitos autorais</li>
+        <li>Redistribuir, sublicenciar, vender ou alugar o Software</li>
+        <li>Usar o Software para fins ilegais ou não autorizados</li>
+        <li>Compartilhar credenciais de acesso com terceiros</li>
+        <li>Usar o Software em mais dispositivos que o permitido pela licença</li>
+      </ul>
+      
+      <h3>4. Propriedade Intelectual</h3>
+      <p>O Software e todos os direitos de propriedade intelectual associados permanecem propriedade exclusiva da Filesfy Inc. Esta licença não transfere qualquer direito de propriedade sobre o Software.</p>
+      
+      <h3>5. Vigência e Renovação</h3>
+      <ul>
+        <li><strong>Plano FREE:</strong> Vigência indeterminada, podendo ser revogada a qualquer momento</li>
+        <li><strong>Plano PRO:</strong> Vigência de 12 meses, com renovação automática salvo cancelamento prévio de 7 dias</li>
+      </ul>
+      
+      <h3>6. Garantia e Limitação de Responsabilidade</h3>
+      <p><strong>Isenção de Garantias:</strong> O Software é fornecido "no estado em que se encontra" (AS IS), sem garantias expressas ou implícitas. A Filesfy não garante que:</p>
+      <ul>
+        <li>O Software recuperará 100% dos arquivos em todos os casos</li>
+        <li>O Software será livre de erros ou interrupções</li>
+        <li>Os resultados atenderão a requisitos específicos do Licenciado</li>
+      </ul>
+      <p><strong>Limitação de Responsabilidade:</strong> Em nenhuma hipótese a Filesfy será responsável por danos indiretos, incidentais, especiais ou consequentes, incluindo perda de dados, lucros cessantes ou interrupção de negócios, mesmo que advertida sobre a possibilidade de tais danos. A responsabilidade total da Filesfy está limitada ao valor pago pelo Licenciado nos últimos 12 meses.</p>
+      
+      <h3>7. Rescisão</h3>
+      <p>A licença pode ser rescindida:</p>
+      <ul>
+        <li>Pelo Licenciado a qualquer momento, mediante cancelamento da conta</li>
+        <li>Pela Filesfy em caso de violação deste contrato</li>
+        <li>Automaticamente em caso de inadimplência por mais de 30 dias</li>
+      </ul>
+      <p>Após rescisão, o Licenciado deve cessar todo uso do Software e pode solicitar exclusão de seus dados.</p>
+      
+      <h3>8. Atualizações e Suporte</h3>
+      <ul>
+        <li>Atualizações de segurança e correções de bugs: gratuitas para todos os usuários</li>
+        <li>Novas funcionalidades: podem requerer upgrade de plano</li>
+        <li>Suporte técnico: via e-mail para FREE, prioritário para PRO</li>
+      </ul>
+      
+      <h3>9. Lei Aplicável e Foro</h3>
+      <p>Este contrato é regido pelas leis da República Federativa do Brasil. Fica eleito o foro da Comarca de São Paulo/SP para dirimir quaisquer controvérsias.</p>
+      
+      <h3>10. Contato</h3>
+      <p><strong>E-mail:</strong> licenca@filesfy.com<br>
+      <strong>Suporte:</strong> suporte@filesfy.com</p>
     `;
   } else if (section === 'terms') {
     content = `
-      <h2>Termos de Serviço</h2>
-      <p><strong>Última atualização: 31 de janeiro de 2026</strong></p>
+      <h2>Termos e Condições de Uso</h2>
+      <p><strong>Última atualização: 08 de fevereiro de 2026</strong></p>
       
       <h3>1. Aceitação dos Termos</h3>
-      <p>Ao usar a Filesfy, você concorda com estes Termos de Serviço. Se não concordar, não use nosso serviço.</p>
+      <p>Ao acessar e utilizar a plataforma Filesfy, você concorda integralmente com estes Termos e Condições. Se não concordar, não utilize nossos serviços.</p>
       
-      <h3>2. Licença de Uso</h3>
-      <p>Concedemos a você uma licença limitada, não-exclusiva e revogável para usar a Filesfy pessoalmente ou comercialmente.</p>
+      <h3>2. Descrição do Serviço</h3>
+      <p>A Filesfy oferece soluções de recuperação de dados para arquivos deletados, corrompidos ou perdidos em dispositivos de armazenamento. O serviço está disponível em versões web e desktop.</p>
       
-      <h3>3. Planos de Assinatura</h3>
+      <h3>3. Cadastro e Conta de Usuário</h3>
       <ul>
-        <li><strong>Plano FREE:</strong> Até 5 arquivos, 300MB por scan, acesso limitado</li>
-        <li><strong>Plano PRO:</strong> Até 50 arquivos, 5GB por scan, suporte prioritário</li>
+        <li>Você deve fornecer informações verdadeiras e atualizadas</li>
+        <li>É responsável pela confidencialidade de suas credenciais</li>
+        <li>Deve ter pelo menos 18 anos ou consentimento dos pais/responsáveis</li>
+        <li>Uma conta por pessoa/empresa (exceto planos corporativos)</li>
+        <li>Notifique-nos imediatamente sobre uso não autorizado</li>
       </ul>
       
-      <h3>4. Pagamento e Reembolso</h3>
-      <p>Pagamentos são processados imediatamente. Reembolsos são disponíveis em até 30 dias da compra, sujeito a avaliação.</p>
-      
-      <h3>5. Responsabilidades do Usuário</h3>
+      <h3>4. Planos e Pagamentos</h3>
+      <p><strong>Plano FREE:</strong> Gratuito, com funcionalidades limitadas<br>
+      <strong>Plano PRO:</strong> R$ 99,90/ano - acesso completo</p>
       <ul>
-        <li>Você é responsável por manter a confidencialidade de sua senha</li>
-        <li>Você concorda em usar a Filesfy apenas para fins legais</li>
-        <li>Você não pode redistribuir ou revender nosso serviço</li>
+        <li>Pagamentos via cartão de crédito ou PIX</li>
+        <li>Cobrança antecipada no início de cada período</li>
+        <li>Renovação automática salvo cancelamento</li>
+        <li>Impostos inclusos no preço exibido</li>
+        <li>Reembolso disponível em até 7 dias da compra inicial (sujeito a análise)</li>
       </ul>
       
-      <h3>6. Isenção de Garantia</h3>
-      <p>A Filesfy é fornecida "no estado em que se encontra" sem garantias. Não garantimos 100% de sucesso em todas as recuperações.</p>
-      
-      <h3>7. Limitação de Responsabilidade</h3>
-      <p>A Filesfy Inc. não será responsável por perdas indiretas, incidentais ou consequentes resultantes do uso do serviço.</p>
-    `;
-  } else if (section === 'cookies') {
-    content = `
-      <h2>Política de Cookies</h2>
-      <p><strong>Última atualização: 31 de janeiro de 2026</strong></p>
-      
-      <h3>1. O que são Cookies?</h3>
-      <p>Cookies são pequenos arquivos de texto armazenados no seu navegador para melhorar sua experiência.</p>
-      
-      <h3>2. Tipos de Cookies que Usamos</h3>
+      <h3>5. Uso Aceitável</h3>
+      <p><strong>Você concorda em NÃO:</strong></p>
       <ul>
-        <li><strong>Cookies Essenciais:</strong> Necessários para autenticação e segurança</li>
-        <li><strong>Cookies de Preferência:</strong> Armazenam suas preferências de tema e idioma</li>
-        <li><strong>Cookies de Análise:</strong> Ajudam-nos a entender como você usa a Filesfy</li>
-        <li><strong>Cookies de Rastreamento:</strong> Usados apenas com seu consentimento explícito</li>
+        <li>Usar o serviço para fins ilegais ou não autorizados</li>
+        <li>Tentar obter acesso não autorizado aos sistemas</li>
+        <li>Interferir ou interromper o funcionamento do serviço</li>
+        <li>Fazer engenharia reversa do software</li>
+        <li>Coletar dados de outros usuários sem consentimento</li>
+        <li>Transmitir malware, vírus ou código malicioso</li>
+        <li>Criar múltiplas contas para burlar limites</li>
       </ul>
       
-      <h3>3. Como Gerenciar Cookies</h3>
-      <p>Você pode desabilitar cookies nas configurações do seu navegador. Note que isso pode afetar algumas funcionalidades.</p>
-      
-      <h3>4. Cookies de Terceiros</h3>
-      <p>Utilizamos Google Analytics e Stripe, que podem estabelecer seus próprios cookies. Veja suas políticas de privacidade para mais detalhes.</p>
-    `;
-  } else if (section === 'lgpd') {
-    content = `
-      <h2>Conformidade com LGPD</h2>
-      <p><strong>Última atualização: 31 de janeiro de 2026</strong></p>
-      
-      <h3>1. Lei Geral de Proteção de Dados (LGPD)</h3>
-      <p>A Filesfy está totalmente em conformidade com a Lei nº 13.709/2018 (LGPD) - a legislação brasileira de proteção de dados pessoais.</p>
-      
-      <h3>2. Princípios Fundamentais</h3>
+      <h3>6. Limitações do Serviço</h3>
       <ul>
-        <li><strong>Finalidade:</strong> Coletamos dados apenas para fins específicos e determinados</li>
-        <li><strong>Adequação:</strong> Os dados coletados são adequados e relevantes</li>
-        <li><strong>Necessidade:</strong> Coletamos apenas o mínimo necessário</li>
-        <li><strong>Transparência:</strong> Informamos claramente sobre coleta e uso de dados</li>
-        <li><strong>Segurança:</strong> Protegemos seus dados com tecnologias avançadas</li>
+        <li>A recuperação de dados depende de fatores técnicos e pode não ser bem-sucedida em todos os casos</li>
+        <li>Não garantimos recuperação de 100% dos arquivos</li>
+        <li>Sobrescritas de dados podem impossibilitar a recuperação</li>
+        <li>Requisitos mínimos de sistema devem ser atendidos</li>
       </ul>
       
-      <h3>3. Direitos do Titular</h3>
-      <p>Você tem direito a:</p>
+      <h3>7. Cancelamento e Reembolso</h3>
       <ul>
-        <li>Acessar seus dados pessoais</li>
-        <li>Corrigir dados incompletos ou inexatos</li>
-        <li>Solicitar exclusão de dados</li>
-        <li>Obter confirmação de tratamento</li>
-        <li>Revogar consentimento a qualquer momento</li>
+        <li>Você pode cancelar sua assinatura a qualquer momento pelo painel de controle</li>
+        <li>Cancelamentos terão efeito ao final do período pago</li>
+        <li>Reembolsos: disponíveis em até 7 dias da primeira compra, proporcional ao uso</li>
+        <li>Não há reembolso para renovações automáticas não canceladas</li>
       </ul>
       
-      <h3>4. Encarregado de Proteção de Dados (DPO)</h3>
-      <p><strong>Email:</strong> dpo@filesfy.com</p>
-      <p>Para exercer seus direitos ou fazer reclamações, entre em contato com nosso DPO.</p>
+      <h3>8. Suspensão e Encerramento</h3>
+      <p>Podemos suspender ou encerrar sua conta imediatamente em caso de:</p>
+      <ul>
+        <li>Violação destes Termos</li>
+        <li>Atividade fraudulenta ou ilegal</li>
+        <li>Inadimplência por mais de 15 dias</li>
+        <li>Solicitação sua de exclusão de conta</li>
+      </ul>
       
-      <h3>5. Dados de Menores</h3>
-      <p>A Filesfy não coleta dados de menores de 13 anos. Se identificarmos tal coleta, deletaremos imediatamente.</p>
+      <h3>9. Propriedade Intelectual</h3>
+      <p>Todo conteúdo da Filesfy (logotipos, textos, gráficos, software) é protegido por direitos autorais e marcas registradas. Uso não autorizado é proibido.</p>
+      
+      <h3>10. Privacidade e Proteção de Dados</h3>
+      <p>Coletamos e processamos dados conforme nossa Política de Privacidade, em conformidade com a LGPD (Lei nº 13.709/2018).</p>
+      
+      <h3>11. Modificações nos Termos</h3>
+      <p>Reservamo-nos o direito de modificar estes Termos a qualquer momento. Alterações significativas serão comunicadas com 30 dias de antecedência. O uso continuado após alterações constitui aceitação.</p>
+      
+      <h3>12. Isenção de Responsabilidade</h3>
+      <p>O serviço é fornecido "no estado em que se encontra". Não nos responsabilizamos por:</p>
+      <ul>
+        <li>Perda de dados durante o processo de recuperação</li>
+        <li>Incompatibilidade com hardware/software específicos</li>
+        <li>Interrupções de serviço por manutenção ou causas externas</li>
+        <li>Danos indiretos ou consequentes do uso do serviço</li>
+      </ul>
+      
+      <h3>13. Lei Aplicável e Resolução de Disputas</h3>
+      <p>Estes Termos são regidos pelas leis brasileiras. Tentativas de resolução amigável devem preceder ações judiciais. Foro: Comarca de São Paulo/SP.</p>
+      
+      <h3>14. Contato</h3>
+      <p><strong>Suporte:</strong> suporte@filesfy.com<br>
+      <strong>Jurídico:</strong> legal@filesfy.com<br>
+      <strong>DPO:</strong> dpo@filesfy.com</p>
     `;
   }
+  
+  modalBody.innerHTML = content;
+  modal.showModal();
+}
+
+function openAboutModal() {
+  const modal = document.getElementById('modal-dialog');
+  const modalBody = document.getElementById('modal-body');
+  
+  let content = `
+    <h2>Sobre Filesfy</h2>
+    <p><strong>Versão:</strong> 1.0.0</p>
+    
+    <h3>Quem Somos</h3>
+    <p>A Filesfy Inc. é uma empresa especializada em soluções de recuperação de dados para o mercado brasileiro. Nosso objetivo é fornecer ferramentas seguras e confiáveis para recuperar arquivos deletados ou perdidos.</p>
+    
+    <h3>Nossa Missão</h3>
+    <p>Recuperar dados com segurança, privacidade e eficiência, mantendo os mais altos padrões de conformidade com a LGPD.</p>
+    
+    <h3>Funcionalidades</h3>
+    <ul>
+      <li>Recuperação de múltiplos tipos de arquivo</li>
+      <li>Suporte a múltiplos dispositivos de armazenamento</li>
+      <li>Planos FREE e PRO com diferentes funcionalidades</li>
+      <li>Autenticação segura com Google OAuth</li>
+      <li>Sistema de pagamento integrado via Stripe</li>
+      <li>Suporte técnico especializado</li>
+    </ul>
+    
+    <h3>Contato</h3>
+    <p><strong>E-mail:</strong> contato@filesfy.com<br>
+    <strong>Suporte:</strong> suporte@filesfy.com<br>
+    <strong>DPO:</strong> dpo@filesfy.com</p>
+    
+    <p><strong>© 2026 Filesfy Inc. Todos os direitos reservados.</strong></p>
+  `;
   
   modalBody.innerHTML = content;
   modal.showModal();

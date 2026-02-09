@@ -112,6 +112,19 @@ html, body {
   flex-shrink: 0;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-image-desktop {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  display: block;
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 14px;
@@ -2065,6 +2078,11 @@ body.theme-dark .access-status {
     min-height: 40px;
   }
 
+  .logo-image-desktop {
+    width: 32px;
+    height: 32px;
+  }
+
   .app-header h1 {
     font-size: 12px;
   }
@@ -2392,6 +2410,11 @@ body.theme-dark .access-status {
   .app-header {
     padding: 6px;
     min-height: 36px;
+  }
+
+  .logo-image-desktop {
+    width: 28px;
+    height: 28px;
   }
 
   .app-header h1 {
