@@ -385,7 +385,7 @@ function renderHomePage(container) {
             <div class="stat-label">Taxa de Sucesso</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number">24/7</div>
+            <div class="stat-number">10/10</div>
             <div class="stat-label">Suporte Técnico</div>
           </div>
         </div>
@@ -398,7 +398,7 @@ function renderHomePage(container) {
       </div>
 
       <div class="support-section" id="suporte">
-        <h3>Suporte Técnico 24/7</h3>
+        <h3>Suporte Técnico</h3>
         <div class="support-grid">
           <div class="support-card">
             <div class="support-icon"><img src="https://img.icons8.com/fluency/96/chat.png" alt="Chat em Tempo Real"></div>
@@ -415,7 +415,7 @@ function renderHomePage(container) {
           <div class="support-card">
             <div class="support-icon"><img src="https://img.icons8.com/fluency/96/phone.png" alt="Telefone"></div>
             <h4>Telefone</h4>
-            <p>+55 (11) 3000-0000 - Disponível 24/7</p>
+            <p>+55 (84) 9999-9999 - Disponível</p>
             <button class="btn-secondary">Ligar Agora</button>
           </div>
           <div class="support-card">
